@@ -1,0 +1,22 @@
+{
+  "schemaVersion": 1,
+  "id": "foamy.tray",
+  "name": "Foamy Tray",
+  "version": "1.0.0",
+  "author": "foamrider",
+  "description": "An always-visible system tray with native app menus",
+  "kinds": [
+    "bar-widget"
+  ],
+  "entryPoints": {
+    "barWidget": "Tray.qml"
+  },
+  "barWidget": {
+    "displayName": "System tray",
+    "description": "Active tray icons without a drawer or pin/hide controls",
+    "category": "Status",
+    "allowMultiple": false,
+    "defaultSection": "right"
+  },
+  "license": "MIT"
+}
