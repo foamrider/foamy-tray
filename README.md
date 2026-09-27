@@ -16,6 +16,18 @@ omarchy plugin add https://github.com/foamrider/foamy-tray.git --enable
 Remove your previous tray widget from the bar layout to avoid duplicate icons.
 Supports horizontal and vertical bars. Apps marked passive do not appear.
 
+## Remove
+
+```sh
+omarchy plugin remove foamy.tray
+```
+
+Restore the stock tray through the bar settings if needed. Applications keep
+running; removing this widget does not quit or uninstall them.
+
+Omarchy manages the plugin entry in `shell.json`. Packages and data outside
+the plugin directory are retained unless you remove them separately.
+
 ## License
 
 Licensed under [MIT](LICENSE), with [Omarchy attribution](LICENSE-OMARCHY).
