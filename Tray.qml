@@ -175,7 +175,7 @@ BarWidget {
     menu: root.activeTrayItem ? root.activeTrayItem.menu : null
   }
 
-  PopupCard {
+  TrayPopup {
     id: trayMenuPopup
     anchorItem: root.activeTrayAnchor || root
     owner: root
@@ -221,7 +221,7 @@ BarWidget {
 
           Rectangle {
             anchors.fill: parent
-            radius: Math.max(2, Style.cornerRadius)
+            radius: Style.cornerRadius * 2
             color: backMouse.containsMouse ? Style.hoverFillFor(root.foreground, root.foreground) : "transparent"
           }
 
@@ -341,7 +341,7 @@ BarWidget {
               Rectangle {
                 visible: !menuRow.modelData.isSeparator
                 anchors.fill: parent
-                radius: Math.max(2, Style.cornerRadius)
+                radius: Style.cornerRadius * 2
                 color: rowMouse.containsMouse && menuRow.modelData.enabled ? Style.hoverFillFor(root.foreground, root.foreground) : "transparent"
               }
 
@@ -428,13 +428,13 @@ BarWidget {
     }
   }
 
-  // Renders a tray icon, recoloring symbolic icons to the bar foreground so
-  // they stay visible on any theme (a raw symbolic icon keeps its baked-in
-  // fill and disappears against a matching background).
+  // Recolor symbolic icons and known monochrome app assets, preserving their
+  // status-specific shapes while keeping them visible on either theme.
   component TrayIcon: Item {
     id: trayIconRoot
     required property var icon
-    readonly property bool symbolic: root.iconIsSymbolic(icon)
+    property bool monochrome: false
+    readonly property bool recolor: monochrome || root.iconIsSymbolic(icon)
 
     Image {
       id: trayIconImage
@@ -446,14 +446,14 @@ BarWidget {
       sourceSize.height: Math.round(Math.min(width, height) * Screen.devicePixelRatio)
       source: root.trayIconSource(trayIconRoot.icon)
       // Kept as a hidden layer so the effect can sample it as a texture.
-      visible: !trayIconRoot.symbolic
-      layer.enabled: trayIconRoot.symbolic
+      visible: !trayIconRoot.recolor
+      layer.enabled: trayIconRoot.recolor
     }
 
     MultiEffect {
       anchors.fill: trayIconImage
       source: trayIconImage
-      visible: trayIconRoot.symbolic
+      visible: trayIconRoot.recolor
       colorization: 1.0
       colorizationColor: root.foreground
     }
@@ -483,6 +483,9 @@ BarWidget {
       width: Style.space(12)
       height: Style.space(12)
       icon: trayItemRoot.modelData.icon
+      // WARP ships white PNGs without a symbolic icon name.
+      monochrome: TrayModel.itemNamed(trayItemRoot.modelData, "warp")
+        || TrayModel.itemNamed(trayItemRoot.modelData, "cloudflare")
     }
 
     OpticalGlyph {
