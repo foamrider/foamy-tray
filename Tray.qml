@@ -434,6 +434,7 @@ BarWidget {
     id: trayIconRoot
     required property var icon
     property bool monochrome: false
+    property bool attention: false
     readonly property bool recolor: monochrome || root.iconIsSymbolic(icon)
 
     Image {
@@ -457,12 +458,23 @@ BarWidget {
       colorization: 1.0
       colorizationColor: root.foreground
     }
+
+    Rectangle {
+      visible: trayIconRoot.attention
+      anchors.top: parent.top
+      anchors.right: parent.right
+      width: parent.width / 3
+      height: width
+      radius: width / 2
+      color: Color.urgent
+    }
   }
 
   component TrayItem: Item {
     id: trayItemRoot
 
     required property var modelData
+    readonly property string connectionIcon: TrayModel.warpConnectionIcon(modelData)
     readonly property string replacementGlyph: root.replacementTrayGlyph(modelData)
     readonly property bool useReplacementGlyph: replacementGlyph !== ""
     readonly property bool primaryClickOpensMenu: useReplacementGlyph
@@ -482,7 +494,8 @@ BarWidget {
       visible: !trayItemRoot.useReplacementGlyph
       width: Style.space(12)
       height: Style.space(12)
-      icon: trayItemRoot.modelData.icon
+      icon: trayItemRoot.connectionIcon
+      attention: trayItemRoot.connectionIcon !== String(trayItemRoot.modelData.icon || "")
       // WARP ships white PNGs without a symbolic icon name.
       monochrome: TrayModel.itemNamed(trayItemRoot.modelData, "warp")
         || TrayModel.itemNamed(trayItemRoot.modelData, "cloudflare")

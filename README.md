@@ -8,8 +8,9 @@ left-click. Cloudflare WARP also opens its menu on left-click. Other apps keep
 their normal icons and click behavior. Right-click opens an app's menu.
 
 Symbolic icons and WARP's monochrome icons follow the bar foreground in light
-and dark themes. WARP retains its connection-state icon shapes. Popup corners
-use twice Hyprland's `decoration:rounding` value; zero keeps them square.
+and dark themes. WARP retains its connection-state icon shapes and shows a
+separate attention badge in the theme's urgent color for notifications. Popup
+corners use twice Hyprland's `decoration:rounding` value; zero keeps them square.
 
 ## Install
 
