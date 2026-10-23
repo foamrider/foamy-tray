@@ -51,3 +51,5 @@ the plugin directory are retained unless you remove them separately.
 
 Licensed under [MIT](LICENSE), with [Omarchy attribution](LICENSE-OMARCHY).
 Provided **as is**, without warranty or guaranteed support. Use at your own risk.
+
+Application names, tooltips, and tray menus come from their applications; those applications control their language.
