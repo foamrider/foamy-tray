@@ -4,6 +4,7 @@ import QtQuick.Controls
 import QtQuick.Effects
 import Quickshell.Services.SystemTray
 import qs.Commons
+import qs.Commons as Commons
 import qs.Ui
 import "TrayModel.js" as TrayModel
 
@@ -17,13 +18,25 @@ BarWidget {
   // The custom bar's reorder surface is above this widget's MouseAreas and
   // therefore owns the visible cursor while preserving the tray's own clicks.
   readonly property int barCursorShape: Qt.PointingHandCursor
-  readonly property color foreground: bar ? bar.foreground : Color.foreground
+  readonly property color foreground: bar ? bar.foreground : Commons.Color.foreground
   readonly property string fontFamily: bar ? bar.fontFamily : Style.font.family
   // Passive items opt out through the status notifier protocol. No app is filtered by name.
   readonly property var trayItems: SystemTray.items.values.filter(function(item) {
     return item.status !== Status.Passive
   })
   readonly property int trayItemExtent: Style.bar.iconSlot
+
+  // RC's bar parents the tray-section widgets here. Keep them alongside the
+  // app icons, with no drawer; older hosts simply leave this area empty.
+  readonly property Item sectionHost: sectionArea
+  readonly property string sectionEdge: "fixedEdge" in root && root.fixedEdge === "start" ? "start" : "end"
+  readonly property bool sectionAtStart: sectionEdge === "end"
+  readonly property bool sectionDragActive: !!bar && "traySectionDragActive" in bar && bar.traySectionDragActive === true
+  readonly property int sectionCount: bar && bar.layoutConfig && Array.isArray(bar.layoutConfig.tray)
+    ? bar.layoutConfig.tray.length : 0
+  readonly property real sectionExtent: root.vertical ? sectionArea.height : sectionArea.width
+  readonly property var sectionShown: sectionExtent > 0
+    ? { x: sectionArea.x, y: sectionArea.y, width: sectionArea.width, height: sectionArea.height } : null
 
   // Submenu drill-down state. QsMenuEntry.display() renders a *platform* menu,
   // which Quickshell refuses unless the shell root sets `//@ pragma
@@ -157,16 +170,33 @@ BarWidget {
     return item.tooltipTitle || item.title || item.id || ""
   }
 
-  visible: trayItems.length > 0
-  implicitWidth: root.vertical ? root.barSize : trayItems.length * trayItemExtent
-  implicitHeight: root.vertical ? trayItems.length * trayItemExtent : root.barSize
+  // The RC host only creates section delegates while their parent is visible.
+  // Count configured entries too, so an icon-free tray can bootstrap its children.
+  visible: trayItems.length > 0 || sectionCount > 0 || sectionExtent > 0
+  implicitWidth: root.vertical ? root.barSize : trayItems.length * trayItemExtent + sectionExtent
+  implicitHeight: root.vertical ? trayItems.length * trayItemExtent + sectionExtent : root.barSize
+
+  Item {
+    id: sectionArea
+    // An empty section needs a drop target while dragging. Otherwise it takes
+    // no space. Allow for the host's half-bar-size drop inset at both ends.
+    // Children determine size, avoiding a parent/child size loop.
+    implicitWidth: root.vertical ? (childrenRect.height > 0 || root.sectionDragActive ? root.barSize : 0)
+      : Math.max(childrenRect.width, root.sectionDragActive ? root.barSize * 2 : 0)
+    implicitHeight: root.vertical ? Math.max(childrenRect.height, root.sectionDragActive ? root.barSize * 2 : 0)
+      : (childrenRect.width > 0 || root.sectionDragActive ? root.barSize : 0)
+    x: root.vertical || root.sectionAtStart ? 0 : root.trayItems.length * root.trayItemExtent
+    y: !root.vertical || root.sectionAtStart ? 0 : root.trayItems.length * root.trayItemExtent
+  }
 
   Repeater {
     model: root.trayItems
     TrayItem {
       required property int index
-      x: root.vertical ? (root.barSize - width) / 2 : index * root.trayItemExtent
-      y: root.vertical ? index * root.trayItemExtent : (root.barSize - height) / 2
+      x: root.vertical ? (root.barSize - width) / 2
+        : index * root.trayItemExtent + (root.sectionAtStart ? root.sectionExtent : 0)
+      y: root.vertical ? index * root.trayItemExtent + (root.sectionAtStart ? root.sectionExtent : 0)
+        : (root.barSize - height) / 2
     }
   }
 
@@ -277,7 +307,7 @@ BarWidget {
             anchors.rightMargin: Style.space(10)
             anchors.verticalCenter: parent.verticalCenter
             height: 1
-            color: Color.popups.border
+            color: Commons.Color.popups.border
             opacity: 0.45
           }
         }
@@ -334,7 +364,7 @@ BarWidget {
                 anchors.rightMargin: Style.space(10)
                 anchors.verticalCenter: parent.verticalCenter
                 height: 1
-                color: Color.popups.border
+                color: Commons.Color.popups.border
                 opacity: 0.45
               }
 
@@ -466,7 +496,7 @@ BarWidget {
       width: parent.width / 3
       height: width
       radius: width / 2
-      color: Color.urgent
+      color: Commons.Color.urgent
     }
   }
 

@@ -21,6 +21,20 @@ omarchy plugin add https://github.com/foamrider/foamy-tray.git --enable
 Remove your previous tray widget from the bar layout to avoid duplicate icons.
 Supports horizontal and vertical bars. Apps marked passive do not appear.
 
+On Omarchy 4.5, widgets in `bar.layout.tray` stay visible beside the application
+icons, without a drawer. They remain visible even when no applications have tray
+icons. Dragging a bar widget reveals a drop target when the section is empty.
+Omarchy 4.0.6 continues to show application icons as before.
+
+## Validate
+
+Run `omarchy plugin validate .` and `./test.sh` in a graphical session. The test
+opens a separate stock bar and uses a private D-Bus session with a synthetic app
+icon; it does not change the installed layout or launch app actions. It requires
+`python-dbus` and `python-gobject` for that fixture. Set `OMARCHY_PATH` to another
+Omarchy source directory to test that version. Set `FOAMY_TRAY_CAPTURE_DIR` to an
+existing directory to save horizontal and vertical, light and dark captures.
+
 ## Remove
 
 ```sh
