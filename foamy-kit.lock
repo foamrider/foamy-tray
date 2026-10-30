@@ -1,0 +1,17 @@
+# foamy-kit.lock: written by foamy-kit sync.sh; do not edit.
+# Hashes are of each file's body (the file without its stamp line);
+# notices are hashed whole. tests/kit-check.sh verifies them.
+version 0.1.0
+source 95168f22901b
+components FoamyCursor,FoamyI18n,FoamyIcon,FoamyMotion,FoamyPalette,FoamyPopupCard,FoamyStyle
+ea73fe0ff7e5af0f57e717ebcff745aa73d172fcbbfe47c1aa9bb525687fa527  kit/FoamyCursor.qml
+185f7381c12b890ff269a8a72a5784b2afecabe298c9ceb701675dc9acf4b71a  kit/FoamyCursorSurface.qml
+e2f6c278c7432824fd946f47c487edbcca3aa2341adb20f621c5dbaff6f12899  kit/FoamyI18n.qml
+6b5d1d4d51296570b527741139fad823278031100b9b6c4d4c4f2b0464d640e9  kit/FoamyIcon.qml
+79218200ee2dbe5d1bdfd6ef41768bce029e136f8640f8f5f0833a97d8371d5a  kit/FoamyMotion.qml
+5f4459d510118119c216d5d57fa1e9a87d2ec2459b49e70dcf3344a179922bd9  kit/FoamyPalette.qml
+33f64bc493fb141480a496812151a80bc5fbf0010ff23e1fb7afe9087717b687  kit/FoamyPopupCard.qml
+0b0cb02b422d999bd0658bf0a4710084c3f69ac299695a507655de6d9a9ce1c2  kit/FoamyStyle.qml
+b495047bd93a9b06913511076f504daba17d5bbeb3e0650f3bb53a4220329c57  kit/LICENSE-LUCIDE
+5573e4dcc09426bf8481805c00718cc9f16bb9d83a5b8cf4e22b31c59e829181  kit/qmldir
+7cea4426bc12828c7fa8242d275c4b2de44283c163ee2ae7786a175a44f91e77  tests/kit-check.sh
