@@ -57,11 +57,17 @@ Item {
     }
   }
 
-  onPreviewStateChanged: Qt.callLater(function() {
-    var menu = popup.bodyItem
-    if (!menu) return
-    menu.reset()
-    if (preview.previewState === "cursor") { menu.cursor.index = 1 }
-    if (preview.previewState === "submenu") { menu.cursor.index = 1 }
-  })
+  // After the menu's own level-change reset (TrayMenu.onDepthChanged).
+  onPreviewStateChanged: cursorTimer.restart()
+  Timer {
+    id: cursorTimer
+    interval: 150
+    running: true
+    onTriggered: {
+      var menu = popup.bodyItem
+      if (!menu) return
+      menu.reset()
+      if (preview.previewState === "cursor" || preview.previewState === "submenu") menu.cursor.index = 1
+    }
+  }
 }
