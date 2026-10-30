@@ -49,9 +49,9 @@ test("needs a whole word, not a substring", () => {
 })
 
 test("special cases keep their glyphs and click behaviour", () => {
-  assert.equal(Model.replacementGlyph(steam), "")
-  assert.equal(Model.replacementGlyph(remmina), "")
-  assert.equal(Model.replacementGlyph({ id: "chrome_status_icon_1", title: "ChatGPT" }), "")
+  assert.equal(Model.replacementGlyph(steam), "\u{f1b6}")
+  assert.equal(Model.replacementGlyph(remmina), "\u{eb3a}")
+  assert.equal(Model.replacementGlyph({ id: "chrome_status_icon_1", title: "ChatGPT" }), "\u{ec81}")
   assert.equal(Model.replacementGlyph(warp), "")
   assert.equal(Model.primaryClickOpensMenu(warp), true)
   assert.equal(Model.primaryClickOpensMenu(steam), true)

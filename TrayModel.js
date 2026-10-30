@@ -48,9 +48,9 @@ function itemNamed(item, kind) {
 // Theme-aware Nerd Font glyphs for low-contrast tray bitmaps.
 function replacementGlyph(item) {
   var kind = appKind(item)
-  if (kind === "steam") return ""
-  if (kind === "remmina") return ""
-  if (kind === "chatgpt") return ""
+  if (kind === "steam") return "\u{f1b6}"
+  if (kind === "remmina") return "\u{eb3a}"
+  if (kind === "chatgpt") return "\u{ec81}"
   return ""
 }
 
