@@ -153,19 +153,6 @@ BarWidget {
     return name.slice(-9) === "-symbolic"
   }
 
-  // Replace selected low-contrast tray bitmaps with theme-aware font glyphs.
-  function replacementTrayGlyph(item) {
-    if (TrayModel.itemNamed(item, "steam")) return ""
-    if (TrayModel.itemNamed(item, "remmina")) return ""
-    if (TrayModel.itemNamed(item, "chatgpt") || TrayModel.itemNamed(item, "openai")) return ""
-    return ""
-  }
-
-  // WARP advertises Activate, but its useful tray surface is the menu.
-  function primaryClickPrefersMenu(item) {
-    return TrayModel.itemNamed(item, "warp") || TrayModel.itemNamed(item, "cloudflare")
-  }
-
   function trayTooltip(item) {
     return item.tooltipTitle || item.title || item.id || ""
   }
@@ -505,15 +492,15 @@ BarWidget {
 
     required property var modelData
     readonly property string connectionIcon: TrayModel.warpConnectionIcon(modelData)
-    readonly property string replacementGlyph: root.replacementTrayGlyph(modelData)
+    // Special cases are matched by the item's id or title (TrayModel.js),
+    // never by its tooltip.
+    readonly property string replacementGlyph: TrayModel.replacementGlyph(modelData)
     readonly property bool useReplacementGlyph: replacementGlyph !== ""
-    readonly property bool primaryClickOpensMenu: useReplacementGlyph
-      || root.primaryClickPrefersMenu(modelData)
-      || modelData.onlyMenu
+    readonly property bool primaryClickOpensMenu: TrayModel.primaryClickOpensMenu(modelData)
 
-    visible: modelData.status !== Status.Passive
-    implicitWidth: visible ? root.trayItemExtent : 0
-    implicitHeight: visible ? root.trayItemExtent : 0
+    // trayItems already leaves passive items out.
+    implicitWidth: root.trayItemExtent
+    implicitHeight: root.trayItemExtent
 
     function displayMenu(mouse) {
       root.openTrayMenu(trayItemRoot.modelData, trayItemRoot, mouse)
@@ -527,8 +514,7 @@ BarWidget {
       icon: trayItemRoot.connectionIcon
       attention: trayItemRoot.connectionIcon !== String(trayItemRoot.modelData.icon || "")
       // WARP ships white PNGs without a symbolic icon name.
-      monochrome: TrayModel.itemNamed(trayItemRoot.modelData, "warp")
-        || TrayModel.itemNamed(trayItemRoot.modelData, "cloudflare")
+      monochrome: TrayModel.monochrome(trayItemRoot.modelData)
     }
 
     OpticalGlyph {
