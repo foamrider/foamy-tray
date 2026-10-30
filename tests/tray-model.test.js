@@ -1,6 +1,6 @@
 #!/usr/bin/env node
-// Unit tests for TrayModel.js: app matching (id, then title, never tooltip)
-// and WARP icon handling.
+// Unit tests for TrayModel.js: app matching (id, then title, never tooltip),
+// WARP icon handling, hidden menu rows, cursor stops and Tab between menus.
 "use strict"
 const assert = require("node:assert/strict")
 const path = require("node:path")
@@ -69,6 +69,41 @@ test("WARP attention icons drop the baked-in badge", () => {
   assert.equal(Model.warpConnectionIcon(plain), "/a/connected.png")
   // Other apps keep their icon untouched, even one named attention.png.
   assert.equal(Model.warpConnectionIcon({ id: "other", title: "warpaint", icon: "/a/attention.png" }), "/a/attention.png")
+})
+
+const rows = [
+  { text: "Steam", hasChildren: true },
+  { isSeparator: true },
+  { text: "Store" },
+  { isSeparator: true },
+  { isSeparator: true },
+  { text: "Offline", enabled: false },
+  { text: "Exit" }
+]
+
+test("hides the title entry, leading and duplicate separators at the root", () => {
+  assert.deepEqual(Model.hiddenRows(rows, true, "Steam"), [true, true, false, false, true, false, false])
+})
+
+test("inside a submenu only duplicate separators are hidden", () => {
+  assert.deepEqual(Model.hiddenRows(rows, false, "Steam"), [false, false, false, false, true, false, false])
+  assert.deepEqual(Model.hiddenRows(rows, true, "Other app"), [false, true, false, false, true, false, false])
+})
+
+test("the cursor stops on shown, enabled, non-separator rows", () => {
+  const hidden = Model.hiddenRows(rows, true, "Steam")
+  assert.deepEqual(Model.cursorStops(rows, hidden), [2, 6])
+  assert.deepEqual(Model.cursorStops([], []), [])
+})
+
+test("Tab moves to the adjacent tray item that has a menu", () => {
+  assert.equal(Model.adjacentMenu([true, false, true], 0, 1), 2)
+  assert.equal(Model.adjacentMenu([true, false, true], 2, 1), 0)
+  assert.equal(Model.adjacentMenu([true, false, true], 0, -1), 2)
+  assert.equal(Model.adjacentMenu([true, true, true], 1, -1), 0)
+  assert.equal(Model.adjacentMenu([true], 0, 1), -1)
+  assert.equal(Model.adjacentMenu([true, false], 0, 1), -1)
+  assert.equal(Model.adjacentMenu([], 0, 1), -1)
 })
 
 console.log("RESULT: " + passed + " tray model tests passed")

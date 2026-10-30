@@ -75,6 +75,47 @@ function warpConnectionIcon(item) {
   })
 }
 
+// Menu rows the tray hides: the root entry that only repeats the app's name,
+// separators leading the root menu, and the second of adjacent separators.
+// `entries` is an array of { text, isSeparator, hasChildren }.
+function hiddenRows(entries, atRoot, appTitle) {
+  var hidden = []
+  var title = text(appTitle)
+  for (var i = 0; i < entries.length; i++) {
+    var entry = entries[i] || {}
+    var titleEntry = atRoot && i === 0 && !!entry.hasChildren && text(entry.text) === title
+    var leadingSeparator = atRoot && !!entry.isSeparator && i <= 1
+    var duplicateSeparator = !!entry.isSeparator && i > 0 && !!(entries[i - 1] && entries[i - 1].isSeparator)
+    hidden.push(titleEntry || leadingSeparator || duplicateSeparator)
+  }
+  return hidden
+}
+
+// The keyboard/pointer cursor stops on rows that can be activated: shown,
+// not a separator, enabled. Returns the row index for each stop.
+function cursorStops(entries, hidden) {
+  var stops = []
+  for (var i = 0; i < entries.length; i++) {
+    var entry = entries[i] || {}
+    if (hidden[i] || entry.isSeparator || entry.enabled === false) continue
+    stops.push(i)
+  }
+  return stops
+}
+
+// The next tray item with a menu, for Tab/Shift-Tab between app menus.
+// `hasMenu` is an array of booleans, one per tray item; -1 when there is none.
+function adjacentMenu(hasMenu, current, direction) {
+  var count = hasMenu.length
+  if (count === 0) return -1
+  var step = direction < 0 ? -1 : 1
+  for (var n = 1; n < count; n++) {
+    var index = ((current + step * n) % count + count) % count
+    if (hasMenu[index]) return index
+  }
+  return -1
+}
+
 if (typeof module !== "undefined") {
   module.exports = {
     appKind: appKind,
@@ -82,6 +123,9 @@ if (typeof module !== "undefined") {
     replacementGlyph: replacementGlyph,
     primaryClickOpensMenu: primaryClickOpensMenu,
     monochrome: monochrome,
-    warpConnectionIcon: warpConnectionIcon
+    warpConnectionIcon: warpConnectionIcon,
+    hiddenRows: hiddenRows,
+    cursorStops: cursorStops,
+    adjacentMenu: adjacentMenu
   }
 }

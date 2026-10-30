@@ -6,6 +6,7 @@ import Quickshell.Services.SystemTray
 import qs.Commons
 import qs.Commons as Commons
 import qs.Ui
+import "kit"
 import "TrayModel.js" as TrayModel
 
 BarWidget {
@@ -15,6 +16,12 @@ BarWidget {
   property bool trayMenuOpen: false
   property var activeTrayItem: null
   property var activeTrayAnchor: null
+  // The 4.5 bar puts its open-panel mark under this item: the icon whose
+  // menu is open, not the middle of the whole tray.
+  readonly property Item openPanelIndicatorItem: trayMenuOpen ? activeTrayAnchor : null
+  // The open menu's card and its body (TrayMenu, built on first open).
+  readonly property alias menuPopup: trayMenuPopup
+  readonly property Item trayMenu: trayMenuPopup.bodyItem
   // The custom bar's reorder surface is above this widget's MouseAreas and
   // therefore owns the visible cursor while preserving the tray's own clicks.
   readonly property int barCursorShape: Qt.PointingHandCursor
@@ -26,7 +33,7 @@ BarWidget {
   })
   readonly property int trayItemExtent: Style.bar.iconSlot
 
-  // RC's bar parents the tray-section widgets here. Keep them alongside the
+  // The 4.5 bar parents its tray-section widgets here. Keep them alongside the
   // app icons, with no drawer; older hosts simply leave this area empty.
   readonly property Item sectionHost: sectionArea
   readonly property string sectionEdge: "fixedEdge" in root && root.fixedEdge === "start" ? "start" : "end"
@@ -85,7 +92,8 @@ BarWidget {
     // Flickable keeps its offset across a model swap whenever the new content
     // is still tall enough to hold it, so a menu dismissed while scrolled
     // would otherwise reopen part-way down with its first entries off screen.
-    trayMenuFlick.contentY = 0
+    // The cursor starts unlit again, as on any open.
+    if (trayMenuPopup.bodyItem) trayMenuPopup.bodyItem.reset()
     // Clear the reactive stack before tearing anything down, so no binding can
     // read a partially-destroyed opener while this runs. Then destroy deepest
     // first: an inner opener's menu entry is owned by its parent's children
@@ -121,6 +129,7 @@ BarWidget {
   function openTrayMenu(item, anchorItem, mouse) {
     if (!item) return
     if (!item.menu) {
+      if (!mouse) return
       var point = anchorItem.QsWindow.contentItem.mapFromItem(anchorItem, mouse.x, mouse.y)
       item.display(anchorItem.QsWindow.window, point.x, point.y)
       return
@@ -130,10 +139,37 @@ BarWidget {
     // activeTrayItem.menu, so assigning a new item invalidates the old root's
     // children immediately, before any nested opener referencing them would
     // otherwise get torn down.
+    var switching = trayMenuOpen && activeTrayAnchor !== anchorItem
     resetTrayMenu()
     activeTrayItem = item
     activeTrayAnchor = anchorItem
     trayMenuOpen = true
+    // An open card moving to another icon needs a new anchor rect.
+    if (switching) Qt.callLater(function() { trayMenuPopup.anchor.updateAnchor() })
+    focusTrayMenu()
+  }
+
+  // Keys reach the menu once the focus grab hands the card keyboard focus.
+  function focusTrayMenu() {
+    var menu = trayMenuPopup.ensureBody()
+    if (menu && trayMenuOpen) menu.forceActiveFocus()
+  }
+
+  // The tray's icon delegates, in bar order.
+  function trayAnchor(index) {
+    return trayIcons.itemAt(index)
+  }
+
+  // Tab/Shift-Tab in a menu: open the next/previous app's menu. The host's
+  // panel order skips the tray (it has no panel of its own), so this is
+  // the adjacent panel a menu can switch to.
+  function switchTrayMenu(direction) {
+    var current = trayItems.indexOf(activeTrayItem)
+    var hasMenu = trayItems.map(function(item) { return !!item.menu })
+    var next = TrayModel.adjacentMenu(hasMenu, current, direction)
+    if (next < 0 || !trayAnchor(next)) return false
+    openTrayMenu(trayItems[next], trayAnchor(next), null)
+    return true
   }
 
   function trayIconSource(icon) {
@@ -157,7 +193,7 @@ BarWidget {
     return item.tooltipTitle || item.title || item.id || ""
   }
 
-  // The RC host only creates section delegates while their parent is visible.
+  // The 4.5 host only creates section delegates while their parent is visible.
   // Count configured entries too, so an icon-free tray can bootstrap its children.
   visible: trayItems.length > 0 || sectionCount > 0 || sectionExtent > 0
   implicitWidth: root.vertical ? root.barSize : trayItems.length * trayItemExtent + sectionExtent
@@ -177,6 +213,7 @@ BarWidget {
   }
 
   Repeater {
+    id: trayIcons
     model: root.trayItems
     TrayItem {
       required property int index
@@ -192,255 +229,40 @@ BarWidget {
     menu: root.activeTrayItem ? root.activeTrayItem.menu : null
   }
 
-  TrayPopup {
+  FoamyPopupCard {
     id: trayMenuPopup
     anchorItem: root.activeTrayAnchor || root
     owner: root
     bar: root.bar
     open: root.trayMenuOpen
-    // The card fades out over 140ms (visible stays true for that whole time --
-    // see PopupCard's own visible: open || card.opacity > 0), so resetting on
-    // "open" would swap a live submenu for the root menu mid-fade: a visible
-    // flash, and a resize/reposition if the two have different geometry. Wait
-    // for the fade to actually finish. Switching to a different tray item
-    // still resets immediately, from openTrayMenu() itself.
+    // Menus are denser than panels: the stock tray's 8 px card padding.
+    padding: FoamyStyle.gap
+    // The card fades out after `open` drops (it stays visible until the
+    // fade ends), so resetting on "open" would swap a live submenu for the
+    // root menu mid-fade: a visible flash, and a resize/reposition if the
+    // two have different geometry. Wait for the fade to actually finish.
+    // Switching to a different tray item still resets immediately, from
+    // openTrayMenu() itself.
     onVisibleChanged: if (!visible) root.resetTrayMenu()
-    padding: Style.space(8)
-    borderColor: Qt.rgba(root.foreground.r, root.foreground.g, root.foreground.b, 0.45)
-    contentWidth: trayMenuPopup.fittedContentWidth(Style.space(232))
-    // Let ordinary tray menus use the available screen height. The previous
-    // fixed cap made Steam scroll even when there was room for every row.
-    contentHeight: trayMenuPopup.fittedContentHeight(menuHeaderHeight + trayMenuColumn.implicitHeight)
+    // Ordinary tray menus may use the available screen height (the card caps
+    // itself there), so Steam doesn't scroll when every row fits.
+    onOpenChanged: if (open) Qt.callLater(root.focusTrayMenu)
 
-    // Column skips invisible children but keeps reporting their height, so
-    // read the header's extent through its own visibility.
-    readonly property int menuHeaderHeight: menuHeader.visible ? menuHeader.implicitHeight : 0
-
-    Column {
-      id: trayMenuLayout
-      anchors.fill: parent
-      spacing: 0
-
-      // Header for a drilled-into submenu: names where we are and walks back
-      // out. Pinned above the Flickable rather than scrolling with the rows,
-      // so the way back stays reachable in a submenu taller than the card.
-      // Only present below the root level, so the root menu is unchanged.
-      Column {
-        id: menuHeader
-        visible: root.submenuDepth > 0
-        width: trayMenuLayout.width
-        spacing: 0
-
-        Item {
-          id: menuBackRow
-          width: menuHeader.width
-          implicitHeight: Style.space(30)
-
-          Rectangle {
-            anchors.fill: parent
-            radius: Style.cornerRadius * 2
-            color: backMouse.containsMouse ? Style.hoverFillFor(root.foreground, root.foreground) : "transparent"
-          }
-
-          Text {
-            textFormat: Text.PlainText
-            anchors.verticalCenter: parent.verticalCenter
-            anchors.left: parent.left
-            width: Style.space(22)
-            horizontalAlignment: Text.AlignHCenter
-            text: "\u2039"
-            color: root.foreground
-            font.family: root.fontFamily
-            font.pixelSize: Style.font.bodySmall
-          }
-
-          Text {
-            textFormat: Text.PlainText
-            anchors.verticalCenter: parent.verticalCenter
-            anchors.left: parent.left
-            anchors.leftMargin: Style.space(28)
-            anchors.right: parent.right
-            anchors.rightMargin: Style.space(10)
-            text: root.currentTitle
-            color: root.foreground
-            font.family: root.fontFamily
-            font.pixelSize: Style.font.bodySmall
-            elide: Text.ElideRight
-          }
-
-          MouseArea {
-            id: backMouse
-            anchors.fill: parent
-            hoverEnabled: true
-            cursorShape: Qt.PointingHandCursor
-            onClicked: {
-              if (root.menuLevelSettling) return
-              // Reset before the model swap so the parent level shows from
-              // the top (same ordering as the row delegate below).
-              trayMenuFlick.contentY = 0
-              root.leaveSubmenu()
-            }
-          }
+    body: Component {
+      TrayMenu {
+        entries: root.currentChildren ? root.currentChildren.values : []
+        depth: root.submenuDepth
+        title: root.currentTitle
+        appTitle: root.activeTrayItem ? String(root.activeTrayItem.title || root.activeTrayItem.id || "") : ""
+        pointerSettling: root.menuLevelSettling
+        onBack: root.leaveSubmenu()
+        onEnter: function(entry, title) { root.enterSubmenu(entry, title) }
+        onTrigger: function(entry) {
+          entry.triggered()
+          root.close()
         }
-
-        Item {
-          width: menuHeader.width
-          implicitHeight: Style.space(11)
-
-          Rectangle {
-            anchors.left: parent.left
-            anchors.leftMargin: Style.space(10)
-            anchors.right: parent.right
-            anchors.rightMargin: Style.space(10)
-            anchors.verticalCenter: parent.verticalCenter
-            height: 1
-            color: Commons.Color.popups.border
-            opacity: 0.45
-          }
-        }
-      }
-
-      Flickable {
-        id: trayMenuFlick
-        width: trayMenuLayout.width
-        height: trayMenuLayout.height - trayMenuPopup.menuHeaderHeight
-        contentWidth: width
-        contentHeight: trayMenuColumn.implicitHeight
-        clip: true
-        boundsBehavior: Flickable.StopAtBounds
-        flickableDirection: Flickable.VerticalFlick
-        interactive: contentHeight > height
-
-        ScrollBar.vertical: ScrollBar { policy: ScrollBar.AsNeeded }
-
-        Column {
-          id: trayMenuColumn
-          width: trayMenuFlick.width
-          spacing: 0
-
-          Repeater {
-            model: root.currentChildren
-
-            delegate: Item {
-              id: menuRow
-              required property var modelData
-              required property int index
-
-              readonly property string rowText: String(modelData.text || "")
-              readonly property string activeTitle: root.activeTrayItem ? String(root.activeTrayItem.title || root.activeTrayItem.id || "") : ""
-              // Both only ever describe the root menu; inside a submenu the first
-              // rows are real entries and must not be swallowed.
-              readonly property bool atRoot: root.submenuDepth === 0
-              readonly property bool rootTitleEntry: atRoot && index === 0 && modelData.hasChildren && rowText.toLowerCase() === activeTitle.toLowerCase()
-              readonly property bool leadingSeparator: atRoot && modelData.isSeparator && index <= 1
-              // Some apps export adjacent separators; render only the first in each run.
-              readonly property bool duplicateSeparator: modelData.isSeparator && index > 0
-                && root.currentChildren.values[index - 1].isSeparator
-              readonly property bool hiddenRow: rootTitleEntry || leadingSeparator || duplicateSeparator
-
-              visible: !hiddenRow
-              width: trayMenuColumn.width
-              implicitHeight: hiddenRow ? 0 : (modelData.isSeparator ? Style.space(11) : Style.space(30))
-              opacity: modelData.enabled ? 1.0 : 0.45
-
-              Rectangle {
-                visible: menuRow.modelData.isSeparator
-                anchors.left: parent.left
-                anchors.leftMargin: Style.space(10)
-                anchors.right: parent.right
-                anchors.rightMargin: Style.space(10)
-                anchors.verticalCenter: parent.verticalCenter
-                height: 1
-                color: Commons.Color.popups.border
-                opacity: 0.45
-              }
-
-              Rectangle {
-                visible: !menuRow.modelData.isSeparator
-                anchors.fill: parent
-                radius: Style.cornerRadius * 2
-                color: rowMouse.containsMouse && menuRow.modelData.enabled ? Style.hoverFillFor(root.foreground, root.foreground) : "transparent"
-              }
-
-              Text {
-                textFormat: Text.PlainText
-                visible: !menuRow.modelData.isSeparator && menuRow.modelData.buttonType !== QsMenuButtonType.None
-                anchors.verticalCenter: parent.verticalCenter
-                anchors.left: parent.left
-                width: Style.space(22)
-                horizontalAlignment: Text.AlignHCenter
-                text: menuRow.modelData.checkState === Qt.Checked ? "\uf00c" : ""
-                color: root.foreground
-                font.family: root.fontFamily
-                font.pixelSize: Style.font.bodySmall
-              }
-
-              Image {
-                id: menuIcon
-                visible: !menuRow.modelData.isSeparator && String(menuRow.modelData.icon || "") !== ""
-                anchors.verticalCenter: parent.verticalCenter
-                anchors.left: parent.left
-                anchors.leftMargin: Style.space(24)
-                width: Style.space(16)
-                height: Style.space(16)
-                fillMode: Image.PreserveAspectFit
-                // Decode at physical pixels: IconImage uses the logical size,
-                // which leaves PNG icons upscaled and blurry on HiDPI displays.
-                sourceSize.width: width * Screen.devicePixelRatio
-                sourceSize.height: height * Screen.devicePixelRatio
-                source: menuRow.modelData.icon
-              }
-
-              Text {
-                textFormat: Text.PlainText
-                visible: !menuRow.modelData.isSeparator
-                anchors.verticalCenter: parent.verticalCenter
-                anchors.left: parent.left
-                anchors.leftMargin: menuIcon.visible ? Style.space(46) : Style.space(28)
-                anchors.right: submenuGlyph.left
-                anchors.rightMargin: Style.space(8)
-                text: menuRow.rowText
-                color: root.foreground
-                font.family: root.fontFamily
-                font.pixelSize: Style.font.bodySmall
-                elide: Text.ElideRight
-              }
-
-              Text {
-                textFormat: Text.PlainText
-                id: submenuGlyph
-                visible: !menuRow.modelData.isSeparator && menuRow.modelData.hasChildren
-                anchors.verticalCenter: parent.verticalCenter
-                anchors.right: parent.right
-                anchors.rightMargin: Style.space(10)
-                text: "\u203a"
-                color: root.foreground
-                font.family: root.fontFamily
-                font.pixelSize: Style.font.bodySmall
-              }
-
-              MouseArea {
-                id: rowMouse
-                anchors.fill: parent
-                hoverEnabled: true
-                enabled: !menuRow.modelData.isSeparator && menuRow.modelData.enabled
-                cursorShape: enabled ? Qt.PointingHandCursor : Qt.ArrowCursor
-                onClicked: {
-                  if (root.menuLevelSettling) return
-                  if (menuRow.modelData.hasChildren) {
-                    // Reset scroll BEFORE swapping the model: the swap destroys
-                    // this delegate synchronously and ids stop resolving after.
-                    trayMenuFlick.contentY = 0
-                    root.enterSubmenu(menuRow.modelData, menuRow.rowText)
-                  } else {
-                    menuRow.modelData.triggered()
-                    root.close()
-                  }
-                }
-              }
-            }
-          }
-        }
+        onDismiss: root.close()
+        onSwitchMenu: function(direction) { root.switchTrayMenu(direction) }
       }
     }
   }
