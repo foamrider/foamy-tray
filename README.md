@@ -74,15 +74,15 @@ omarchy plugin validate .
 4.0.6, `/tmp/omarchy-ref/v45/shell` for 4.5; set `FOAMY_HOST_40` /
 `FOAMY_HOST_45` to change them) offscreen, in temporary HOME and XDG
 directories, with the bar's window swapped for an offscreen one. Two synthetic
-apps on a private D-Bus session (`dbus-run-session`) provide tray items and
+apps on the harness's private D-Bus session provide tray items and
 menus, so the desktop's own tray is never seen or touched, and no host script
 runs. It checks the 4.5 tray-section hooks in all four bar positions and the
 menu's keyboard model. `--shots DIR` saves screenshots.
 
 Test dependencies: `node`, `python`, `python-dbus`, `python-gobject`,
-`python-pillow` (screenshots only), `dbus` (`dbus-run-session`), `quickshell`,
+`python-pillow` (screenshots only), `dbus` (`dbus-daemon`), `quickshell`,
 and a [foamy-kit](https://github.com/foamrider/foamy-kit) checkout at
-`~/GitHub/Personal/foamy-kit` (or `FOAMY_KIT`) for the offscreen harness. Its
+`~/GitHub/Personal/foamy-kit` (or `FOAMY_KIT`, 0.2.0 or later) for the offscreen harness. Its
 `preview/render.py` renders the mock menus in `preview/Preview.qml`. The
 tests no longer use `ripgrep`.
 

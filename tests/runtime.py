@@ -9,9 +9,9 @@ temp HOME/XDG/runtime dirs, offscreen Qt, no Wayland/Hyprland variables. The
 host's plugins/bar/Bar.qml is loaded with its PanelWindow swapped for
 tests/qml/FakeBarWindow.qml; everything else is the host's code. Bar helper
 commands (omarchy-bar …) resolve to no-op stubs, no host script or binary is
-run. The whole run sits in its own dbus-run-session: two synthetic apps
-(tests/status_notifier.py) provide tray items and DBusMenus, and the
-desktop's tray is never seen or touched.
+run. Each run gets the harness's private D-Bus session (foamy-kit 0.2.0):
+two synthetic apps (tests/status_notifier.py) provide tray items and
+DBusMenus there, and the desktop's tray is never seen or touched.
 
 FOAMY_TRAY_KEEP=1 keeps the run directory (log, events) after a pass.
 --shots DIR writes composed 1920x1080 screens (wallpaper, bar, open menu
@@ -25,16 +25,10 @@ import shutil
 import signal
 import subprocess
 import sys
-import tempfile
 import time
 
 PLUGIN = Path(__file__).resolve().parents[1]
 KIT = Path(os.environ.get("FOAMY_KIT", Path.home() / "GitHub/Personal/foamy-kit"))
-BUS_CONFIG = """<!DOCTYPE busconfig PUBLIC "-//freedesktop//DTD D-Bus Bus Configuration 1.0//EN"
- "http://www.freedesktop.org/standards/dbus/1.0/busconfig.dtd">
-<busconfig><type>session</type><listen>unix:tmpdir=/tmp</listen>
-<policy context="default"><allow send_destination="*"/><allow receive_sender="*"/><allow own="*"/></policy></busconfig>
-"""
 STUBS = ("omarchy-bar", "omarchy-bar-text-color", "omarchy-shell", "omarchy", "hyprctl")
 
 
@@ -124,18 +118,27 @@ def run_host(host_name, shots, theme, plugin, shell_path=PLUGIN / "tests/qml/Run
         "FOAMY_TRAY_STATUS": str(status),
         "FOAMY_TRAY_EVENTS": str(events),
         "FOAMY_TRAY_THEME": theme,
-        "DBUS_SESSION_BUS_ADDRESS": os.environ["DBUS_SESSION_BUS_ADDRESS"],
-        "FOAMY_TRAY_PRIVATE_BUS": os.environ["DBUS_SESSION_BUS_ADDRESS"],
     })
     if shots:
         run.env["FOAMY_TRAY_SHOTS"] = str(raw)
-    fixture = subprocess.Popen([sys.executable, "-I", str(PLUGIN / "tests/status_notifier.py"), str(status), str(events)],
-                               env=run.env, start_new_session=True)
+    # start() brings up the harness's private bus (and qs on it); the fixture
+    # joins that bus and registers its items once qs's watcher is up.
+    fixture = None
+    run.start()
     try:
-        run.run(timeout=120)
+        bus = run.env["DBUS_SESSION_BUS_ADDRESS"]
+        if not bus.startswith(f"unix:path={run.base}/bus"):
+            raise SystemExit("foamy-kit harness did not start a private D-Bus session")
+        fixture = subprocess.Popen([sys.executable, "-I", str(PLUGIN / "tests/status_notifier.py"), str(status), str(events)],
+                                   env=dict(run.env, FOAMY_TRAY_PRIVATE_BUS=bus), start_new_session=True)
+        run.wait(timeout=120)
     finally:
-        os.killpg(fixture.pid, signal.SIGTERM)
-        fixture.wait(timeout=5)
+        run.stop()
+        if fixture is not None:
+            os.killpg(fixture.pid, signal.SIGTERM)
+            fixture.wait(timeout=5)
+    run.ok = "FOAMY DONE" in run.log and "FOAMY FAIL" not in run.log \
+        and not any(marker in run.log for marker in harness.FAILURE_MARKERS)
     result = next((line.split("FOAMY RESULT ", 1)[1] for line in run.log.splitlines() if "FOAMY RESULT" in line), "no result")
     ok = run.ok
     print(f"{'PASS' if ok else 'FAIL'} runtime {host_name} ({theme}): {result}")
@@ -170,14 +173,6 @@ def main():
     if not (KIT / "preview/harness.py").exists():
         print(f"SKIP: foamy-kit harness not found at {KIT} (set FOAMY_KIT)")
         return 0
-    if os.environ.get("FOAMY_TRAY_INSIDE_BUS") != "1":
-        # Re-run inside a private session bus, so the desktop's tray is never touched.
-        with tempfile.TemporaryDirectory(prefix="foamy-tray-bus-") as tmp:
-            config = Path(tmp) / "bus.conf"
-            config.write_text(BUS_CONFIG)
-            env = dict(os.environ, FOAMY_TRAY_INSIDE_BUS="1")
-            return subprocess.call(["dbus-run-session", f"--config-file={config}", "--",
-                                    sys.executable, "-I", __file__] + sys.argv[1:], env=env)
     hosts = ["4.0", "4.5"] if args.host == "both" else [args.host]
     results = [run_host(host, args.shots, args.theme, Path(args.plugin).resolve(), args.shell) for host in hosts]
     return 0 if all(results) else 1
