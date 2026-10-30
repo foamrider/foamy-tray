@@ -6,6 +6,7 @@ import qs.Commons as Commons
 import qs.Ui
 import "hostbar" as Host
 import "plugin" as Foamy
+import "plugin/TrayModel.js" as TrayModel
 
 // Offscreen integration test, run by tests/runtime.py: the host's real
 // Bar.qml (4.0.6 or 4.5) hosts Foamy Tray, and two synthetic apps on a
@@ -259,6 +260,9 @@ ShellRoot {
         test.check(t.trayItems.length === 2 && test.first >= 0 && test.second >= 0 && !!t.trayItems[test.first].menu,
           "two apps with menus are shown")
         test.check(!t.trayMenu, "menu body is not built before the first open")
+        test.check(TrayModel.replacementGlyph({ id: "steam" }) === String.fromCharCode(0xf1b6)
+          && TrayModel.replacementGlyph({ id: "remmina-icon" }) === String.fromCharCode(0xeb3a),
+          "escaped Nerd Font glyphs survive in the QML engine")
         t.openTrayMenu(t.trayItems[test.first], t.trayAnchor(test.first), null)
         break
       case 32:
@@ -273,6 +277,7 @@ ShellRoot {
         }
         test.check(t.menuPopup.cardItem && t.menuPopup.cardItem.radius === Style.cornerRadius * 2, "card uses the foamy radius")
         test.check(t.menuPopup.borderSpec && Border.uniformWidth(t.menuPopup.borderSpec) === 1, "card uses the foamy 1px border")
+        test.check(t.menuPopup.padding === Style.space(8), "card uses the kit's 8 px menu padding")
         test.shot("menu")
         break
       case 33:

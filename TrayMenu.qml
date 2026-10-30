@@ -159,16 +159,13 @@ PanelKeyCatcher {
       Accessible.name: FoamyI18n.t("Back")
       Accessible.description: menu.title
 
-      HoverHandler { cursorShape: Qt.PointingHandCursor }
-
       FoamyIcon {
         anchors.verticalCenter: parent.verticalCenter
         anchors.left: parent.left
         anchors.leftMargin: (Style.space(24) - width) / 2
         width: FoamyStyle.font.subtitle
         height: width
-        rotation: 180
-        name: "chevron-right"
+        name: "chevron-left"
         color: FoamyPalette.text
       }
 
@@ -268,10 +265,10 @@ PanelKeyCatcher {
             anchors.fill: parent
             foreground: FoamyPalette.text
             hasCursor: row.stop >= 0 && cursor.at(row.stop)
+            // Separators and disabled entries don't react to the pointer.
+            cursorShape: row.stop >= 0 ? Qt.PointingHandCursor : Qt.ArrowCursor
             onHovered: if (row.stop >= 0) cursor.hover(row.stop)
             onClicked: if (row.stop >= 0 && !menu.pointerSettling) menu.activate(row.stop)
-
-            HoverHandler { cursorShape: row.stop >= 0 ? Qt.PointingHandCursor : Qt.ArrowCursor }
 
             FoamyIcon {
               visible: row.checkable && row.checked

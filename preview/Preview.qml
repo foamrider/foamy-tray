@@ -46,7 +46,6 @@ Item {
     anchorItem: preview.anchorItem
     bar: preview.bar
     open: true
-    padding: FoamyStyle.gap
     body: Component {
       Plugin.TrayMenu {
         depth: preview.previewState === "submenu" || preview.previewState === "long" ? 1 : 0

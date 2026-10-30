@@ -235,8 +235,6 @@ BarWidget {
     owner: root
     bar: root.bar
     open: root.trayMenuOpen
-    // Menus are denser than panels: the stock tray's 8 px card padding.
-    padding: FoamyStyle.gap
     // The card fades out after `open` drops (it stays visible until the
     // fade ends), so resetting on "open" would swap a live submenu for the
     // root menu mid-fade: a visible flash, and a resize/reposition if the
