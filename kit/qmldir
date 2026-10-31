@@ -1,4 +1,4 @@
-# foamy-kit 0.3.5 5573e4dcc09426bf8481805c00718cc9f16bb9d83a5b8cf4e22b31c59e829181 — do not edit; change foamy-kit and run sync
+# foamy-kit 0.4.0 a7d79323d11fd97cc8300265b0519172efd211a063fa04962726020ae8a925b1 — do not edit; change foamy-kit and run sync
 FoamyCursor 1.0 FoamyCursor.qml
 FoamyCursorSurface 1.0 FoamyCursorSurface.qml
 singleton FoamyI18n 1.0 FoamyI18n.qml
@@ -7,3 +7,4 @@ singleton FoamyMotion 1.0 FoamyMotion.qml
 singleton FoamyPalette 1.0 FoamyPalette.qml
 FoamyPopupCard 1.0 FoamyPopupCard.qml
 singleton FoamyStyle 1.0 FoamyStyle.qml
+FoamyWheelScroll 1.0 FoamyWheelScroll.qml
