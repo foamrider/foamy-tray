@@ -75,20 +75,20 @@ PanelKeyCatcher {
   // Reset the scroll before the model swap: the swap destroys the row
   // delegates synchronously, so nothing may run on them afterwards.
   function goInto(entry) {
-    flick.contentY = 0
+    wheel.scrollTo(0, false)
     enter(entry, String(entry.text || ""))
   }
 
   function goBack() {
     if (atRoot) return
-    flick.contentY = 0
+    wheel.scrollTo(0, false)
     back()
   }
 
   function reset() {
     keyboardLevelChange = false
     cursor.reset()
-    flick.contentY = 0
+    wheel.scrollTo(0, false)
   }
 
   // Keep the keyboard cursor's row inside the scrolled list.
@@ -201,6 +201,9 @@ PanelKeyCatcher {
       }
     }
   }
+
+  // A wheel notch scrolls about three rows, however the mouse splits it.
+  FoamyWheelScroll { id: wheel; target: flick }
 
   Flickable {
     id: flick
