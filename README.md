@@ -61,6 +61,8 @@ None. The tray has no settings of its own.
 
 ## Development
 
+`kit/` holds shared components copied from [foamy-kit](https://github.com/foamrider/foamy-kit); edit them there, not here.
+
 ```sh
 ./test.sh                 # all of the below except validate
 node tests/tray-model.test.js
