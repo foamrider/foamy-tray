@@ -1,13 +1,13 @@
 # foamy-kit.lock: written by foamy-kit sync.sh; do not edit.
 # Hashes are of each file's body (the file without its stamp line);
 # notices are hashed whole. tests/kit-check.sh verifies them.
-version 0.4.2
-source 21af1250aaaf
+version 0.4.3
+source 2b637e00d2bb
 components FoamyCursor,FoamyI18n,FoamyIcon,FoamyMotion,FoamyPalette,FoamyPopupCard,FoamyStyle,FoamyWheelScroll
 4488b3dbaa2b0fab78fb66dea979e57bcc0f30e76e6443bb4a0f031fffc44709  kit/FoamyCursor.qml
 322db103ce6d6476aac66858d421c75258365a5a2017188906cce61c8b1610ee  kit/FoamyCursorSurface.qml
 e2f6c278c7432824fd946f47c487edbcca3aa2341adb20f621c5dbaff6f12899  kit/FoamyI18n.qml
-2b6dbbac420d55e5a178d0bdec9c58222b867f675f1a23beb3ae4e7440dd7b84  kit/FoamyIcon.qml
+1080db23c5895dcfe6a5bb1c69b116b4f7d7e7f15c6a4dd373f745b2b36f68f6  kit/FoamyIcon.qml
 79218200ee2dbe5d1bdfd6ef41768bce029e136f8640f8f5f0833a97d8371d5a  kit/FoamyMotion.qml
 f54ae05f597de692a3a44514acaeace32396364f9baf9f53b0fe2e9ff4adc2fa  kit/FoamyPalette.qml
 bf787e43913cc889af046b3a3ae98ed38ef95372aabac16fe4c44420ad2e8925  kit/FoamyPopupCard.qml
