@@ -6,6 +6,7 @@ import qs.Commons as Commons
 import qs.Ui
 import "hostbar" as Host
 import "plugin" as Foamy
+import "plugin/kit"
 import "plugin/TrayModel.js" as TrayModel
 
 // Offscreen integration test, run by tests/runtime.py: the host's real
@@ -269,6 +270,14 @@ ShellRoot {
         test.check(t.trayMenuOpen && !!m && m.entries.length === 5, "menu opens with the app's DBusMenu entries")
         test.check(JSON.stringify(m.stops) === "[0,2,4]", "cursor skips the separator and the disabled entry")
         test.check(m.cursor.index === -1, "no row is lit on open")
+        // Menu text is the kit menu's size (FoamyMenu: body), in logical
+        // pixels, so it follows the font scale and the monitor's scaling.
+        var sizes = []
+        ;(function walk(item) {
+          if (item.text !== undefined && item.font !== undefined && item.text === "Stations") sizes.push(item.font.pixelSize)
+          for (var i = 0; i < item.children.length; i++) walk(item.children[i])
+        })(m)
+        test.check(sizes.length === 1 && sizes[0] === FoamyStyle.font.body, "menu text is the kit menu's size: " + sizes)
         test.check(t.openPanelIndicatorItem === t.trayAnchor(test.first), "open-panel mark targets the clicked icon")
         if (test.v45) {
           var slot = test.slotFor("foamy.tray")

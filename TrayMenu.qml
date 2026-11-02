@@ -181,7 +181,7 @@ PanelKeyCatcher {
         text: menu.title
         color: FoamyPalette.text
         font.family: FoamyStyle.fontFamily
-        font.pixelSize: FoamyStyle.font.bodySmall
+        font.pixelSize: FoamyStyle.font.body
         font.weight: Font.DemiBold
         elide: Text.ElideRight
       }
@@ -311,7 +311,7 @@ PanelKeyCatcher {
               text: row.label
               color: FoamyPalette.text
               font.family: FoamyStyle.fontFamily
-              font.pixelSize: FoamyStyle.font.bodySmall
+              font.pixelSize: FoamyStyle.font.body
               elide: Text.ElideRight
             }
 
