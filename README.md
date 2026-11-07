@@ -61,8 +61,6 @@ None. The tray has no settings of its own.
 
 ## Development
 
-`kit/` holds shared components copied from [foamy-kit](https://github.com/foamrider/foamy-kit); edit them there, not here.
-
 ```sh
 ./test.sh                 # all of the below except validate
 node tests/tray-model.test.js
@@ -85,8 +83,9 @@ Test dependencies: `node`, `python`, `python-dbus`, `python-gobject`,
 `python-pillow` (screenshots only), `dbus` (`dbus-daemon`), `quickshell`,
 and a [foamy-kit](https://github.com/foamrider/foamy-kit) checkout at
 `~/GitHub/Personal/foamy-kit` (or `FOAMY_KIT`, 0.2.0 or later) for the offscreen harness. Its
-`preview/render.py` renders the mock menus in `preview/Preview.qml`. The
-tests no longer use `ripgrep`.
+`preview/render.py` renders the mock menus in `preview/Preview.qml`;
+`preview.png` is the top right of `menu-cursor-screen.png` from
+`tests/runtime.py --host 4.5 --shots DIR`.
 
 Shared parts (popup card, cursor, tokens, icons, translations) come from
 foamy-kit as stamped copies in `kit/`. Don't edit them here: change foamy-kit
