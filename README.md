@@ -12,14 +12,13 @@ omarchy plugin add https://github.com/foamrider/foamy-tray.git --enable
 ```
 
 Remove the stock tray widget (or any other tray) from the bar layout, so icons
-don't show twice. Supports horizontal and vertical bars on Omarchy 4.5 and
-4.0.6. Apps marked passive do not appear.
+don't show twice. Supports horizontal and vertical bars on Omarchy 4.5. Apps
+marked passive do not appear.
 
-On Omarchy 4.5, widgets in `bar.layout.tray` stay visible beside the
-application icons, without a drawer. They remain visible even when no
-applications have tray icons, and dragging a bar widget reveals a drop target
-when the section is empty. The bar's open-panel mark sits under the icon whose
-menu is open. Omarchy 4.0.6 shows the application icons only.
+Widgets in `bar.layout.tray` stay visible beside the application icons,
+without a drawer. They remain visible even when no applications have tray
+icons, and dragging a bar widget reveals a drop target when the section is
+empty. The bar's open-panel mark sits under the icon whose menu is open.
 
 ## Use
 
@@ -66,18 +65,20 @@ None. The tray has no settings of its own.
 node tests/tray-model.test.js
 node tests/i18n.test.js
 bash tests/kit-check.sh
-python3 -I tests/runtime.py [--host 4.0|4.5|both] [--shots DIR]
+python3 -I tests/runtime.py [--host 4.5|4.0|both] [--shots DIR]
 omarchy plugin validate .
 ```
 
-`tests/runtime.py` loads the host's real bar (`/usr/share/omarchy/shell` for
-4.0.6, `/tmp/omarchy-ref/v45/shell` for 4.5; set `FOAMY_HOST_40` /
-`FOAMY_HOST_45` to change them) offscreen, in temporary HOME and XDG
-directories, with the bar's window swapped for an offscreen one. Two synthetic
+`tests/runtime.py` loads the host's real bar from the installed Omarchy 4.5
+shell (`/usr/share/omarchy/shell`; set `FOAMY_HOST_45` to use another tree)
+offscreen, in temporary HOME and XDG directories, with the bar's window
+swapped for an offscreen one. Two synthetic
 apps on the harness's private D-Bus session provide tray items and
 menus, so the desktop's own tray is never seen or touched, and no host script
 runs. It checks the 4.5 tray-section hooks in all four bar positions and the
-menu's keyboard model. `--shots DIR` saves screenshots.
+menu's keyboard model. `--shots DIR` saves screenshots. `--host 4.0` and
+`--host both` run 4.0 only against an Omarchy 4.0 shell tree in
+`FOAMY_HOST_40`, and print a SKIP line without one.
 
 Test dependencies: `node`, `python`, `python-dbus`, `python-gobject`,
 `python-pillow` (screenshots only), `dbus` (`dbus-daemon`), `quickshell`,
@@ -111,4 +112,4 @@ Provided **as is**, without warranty or guaranteed support. Use at your own risk
 
 Application names, tooltips, and tray menus come from their applications;
 those applications control their language. The tray's own text follows the
-Omarchy language on 4.5 (English and Norwegian included).
+Omarchy language (English and Norwegian included).
