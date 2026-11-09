@@ -26,7 +26,9 @@ empty. The bar's open-panel mark sits under the icon whose menu is open.
   middle-click runs its secondary action; scrolling is passed to the app.
 - Steam, Remmina and ChatGPT are drawn with theme-aware Omarchy font glyphs
   and open their menus on left-click. Cloudflare WARP also opens its menu on
-  left-click. These apps are recognised by their tray item id or title (never
+  left-click. Spotify ignores the default action, so left-click brings its
+  window back instead: it focuses the window, or, when Spotify is hidden to
+  the tray, uses its **Show Spotify** menu entry. These apps are recognised by their tray item id or title (never
   by the tooltip, which apps change freely); every other app keeps its own
   icon and click behaviour.
 - Symbolic icons and WARP's monochrome icons follow the bar foreground in

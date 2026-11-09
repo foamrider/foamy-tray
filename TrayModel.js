@@ -41,6 +41,55 @@ function appKind(item) {
   return ""
 }
 
+// Apps that hide their window to the tray and whose Activate does nothing
+// (libayatana-appindicator items such as Spotify). Left-click brings the
+// window back: focus it when it is mapped, otherwise trigger the app's own
+// menu entry that shows it. Matched like APPS, by Id then Title.
+var WINDOW_APPS = {
+  spotify: { names: ["spotify"], windowClass: "spotify", showEntry: "show spotify" }
+}
+
+function windowApp(item) {
+  if (!item) return null
+  var fields = [item.id, item.title]
+  for (var f = 0; f < fields.length; f++) {
+    for (var kind in WINDOW_APPS) {
+      var app = WINDOW_APPS[kind]
+      for (var n = 0; n < app.names.length; n++) {
+        if (nameMatches(fields[f], app.names[n])) return app
+      }
+    }
+  }
+  return null
+}
+
+// The app's window among `windows` ({ wmClass, address, focusOrder }): the
+// most recently focused one with the app's class, or null. The result's
+// address always has its 0x prefix (Quickshell reports it without one).
+function appWindow(app, windows) {
+  if (!app) return null
+  var found = null
+  for (var i = 0; i < (windows || []).length; i++) {
+    var win = windows[i] || {}
+    if (text(win.wmClass) !== app.windowClass) continue
+    var address = String(win.address || "").replace(/^0x/i, "")
+    if (!/^[0-9a-f]+$/i.test(address)) continue
+    if (!found || Number(win.focusOrder) < Number(found.focusOrder))
+      found = { wmClass: win.wmClass, address: "0x" + address, focusOrder: win.focusOrder }
+  }
+  return found
+}
+
+// Index of the menu entry that shows the app's window, or -1.
+function showWindowEntry(app, entries) {
+  if (!app) return -1
+  for (var i = 0; i < (entries || []).length; i++) {
+    var entry = entries[i] || {}
+    if (!entry.isSeparator && entry.enabled !== false && text(entry.text) === app.showEntry) return i
+  }
+  return -1
+}
+
 function itemNamed(item, kind) {
   return appKind(item) === kind
 }
@@ -120,6 +169,9 @@ if (typeof module !== "undefined") {
   module.exports = {
     appKind: appKind,
     itemNamed: itemNamed,
+    windowApp: windowApp,
+    appWindow: appWindow,
+    showWindowEntry: showWindowEntry,
     replacementGlyph: replacementGlyph,
     primaryClickOpensMenu: primaryClickOpensMenu,
     monochrome: monochrome,
