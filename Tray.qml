@@ -349,7 +349,7 @@ BarWidget {
     readonly property string connectionIcon: TrayModel.warpConnectionIcon(modelData)
     // Special cases are matched by the item's id or title (TrayModel.js),
     // never by its tooltip.
-    readonly property string replacementGlyph: TrayModel.replacementGlyph(modelData)
+    readonly property string replacementGlyph: TrayModel.replacementGlyph(modelData, root.setting("glyphs", null))
     readonly property bool useReplacementGlyph: replacementGlyph !== ""
     readonly property bool primaryClickOpensMenu: TrayModel.primaryClickOpensMenu(modelData)
     // Apps that hide to the tray and ignore Activate (Spotify).

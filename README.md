@@ -58,7 +58,19 @@ left languages mirror the menu.
 
 ## Settings
 
-None. The tray has no settings of its own.
+There is no settings panel. One optional key on the tray's entry in
+`~/.config/omarchy/shell.json` replaces app icons with font glyphs:
+
+```json
+{ "id": "foamy.tray", "glyphs": { "spotify": "\uf1bc" } }
+```
+
+`glyphs` maps an app name to a glyph from the bar font (any Nerd Font
+glyph). Names match the tray item's id or title the same way the built-in
+special cases do (so `spotify` matches Spotify's `spotify-client`). The
+glyph is drawn in the bar's foreground colour, so it follows light and dark
+themes. It takes the place of a built-in glyph, and it changes only the
+icon, not what a click does.
 
 ## Development
 

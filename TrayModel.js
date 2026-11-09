@@ -94,8 +94,27 @@ function itemNamed(item, kind) {
   return appKind(item) === kind
 }
 
-// Theme-aware Nerd Font glyphs for low-contrast tray bitmaps.
-function replacementGlyph(item) {
+// A glyph from the widget's `glyphs` setting in shell.json: an object from
+// app name to glyph, matched like APPS (Id, then Title), e.g.
+// { "spotify": "\u{f1bc}" }. Empty when nothing matches.
+function customGlyph(item, glyphs) {
+  if (!item || !glyphs || typeof glyphs !== "object" || Array.isArray(glyphs)) return ""
+  var fields = [item.id, item.title]
+  for (var f = 0; f < fields.length; f++) {
+    for (var name in glyphs) {
+      var glyph = glyphs[name]
+      if (typeof glyph !== "string" || glyph.trim() === "") continue
+      if (nameMatches(fields[f], text(name))) return glyph.trim()
+    }
+  }
+  return ""
+}
+
+// Theme-aware Nerd Font glyphs for low-contrast tray bitmaps; the user's
+// `glyphs` setting wins over the built-in ones.
+function replacementGlyph(item, glyphs) {
+  var custom = customGlyph(item, glyphs)
+  if (custom !== "") return custom
   var kind = appKind(item)
   if (kind === "steam") return "\u{f1b6}"
   if (kind === "remmina") return "\u{eb3a}"
@@ -172,6 +191,7 @@ if (typeof module !== "undefined") {
     windowApp: windowApp,
     appWindow: appWindow,
     showWindowEntry: showWindowEntry,
+    customGlyph: customGlyph,
     replacementGlyph: replacementGlyph,
     primaryClickOpensMenu: primaryClickOpensMenu,
     monochrome: monochrome,

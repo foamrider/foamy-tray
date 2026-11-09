@@ -146,4 +146,20 @@ test("finds the menu entry that shows the window", () => {
   assert.equal(Model.showWindowEntry(null, entries), -1)
 })
 
+test("the glyphs setting replaces an app's icon", () => {
+  const glyphs = { Spotify: "\u{f1bc}", steam: "S", remmina: "  ", warp: 3 }
+  assert.equal(Model.replacementGlyph(spotify, glyphs), "\u{f1bc}")
+  assert.equal(Model.replacementGlyph({ id: "x", title: "Spotify" }, glyphs), "\u{f1bc}")
+  assert.equal(Model.replacementGlyph(steam, glyphs), "S")
+  // Blank or non-string entries keep the built-in glyph or the app's icon.
+  assert.equal(Model.replacementGlyph(remmina, glyphs), "\u{eb3a}")
+  assert.equal(Model.replacementGlyph(warp, glyphs), "")
+  assert.equal(Model.replacementGlyph({ id: "spotifyd" }, glyphs), "")
+  assert.equal(Model.replacementGlyph(spotify, null), "")
+  assert.equal(Model.replacementGlyph(spotify, ["\u{f1bc}"]), "")
+  // A custom glyph changes only the icon, not the click.
+  assert.equal(Model.primaryClickOpensMenu(spotify), false)
+  assert.ok(Model.windowApp(spotify))
+})
+
 console.log("RESULT: " + passed + " tray model tests passed")
