@@ -2,6 +2,7 @@ import Quickshell
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Effects
+import Quickshell.Hyprland
 import Quickshell.Services.SystemTray
 import qs.Commons
 import qs.Commons as Commons
@@ -189,6 +190,40 @@ BarWidget {
     return name.slice(-9) === "-symbolic"
   }
 
+  // Hyprland's mapped windows, for apps that hide to the tray (TrayModel.appWindow).
+  // The class comes from the live Wayland toplevel, as in the stock dock:
+  // lastIpcObject is only filled by a full refresh, so a window mapped since
+  // then (Spotify shown from the tray) has none yet.
+  function openWindows() {
+    var list = Hyprland.toplevels ? Hyprland.toplevels.values : []
+    var out = []
+    for (var i = 0; i < list.length; i++) {
+      var toplevel = list[i].wayland
+      var ipc = list[i].lastIpcObject
+      out.push({ wmClass: String((toplevel && toplevel.appId) || (ipc && ipc["class"]) || ""),
+                 address: String(list[i].address || ""),
+                 // 0 is the window you are in, 1 the one before it.
+                 focusOrder: Number(ipc && ipc.focusHistoryID !== undefined ? ipc.focusHistoryID : 9999) })
+    }
+    return out
+  }
+
+  // Bring back the window of an app that hides to the tray: focus it when it
+  // is mapped, else trigger the app's own "show" menu entry. False when
+  // neither is there, so the caller can fall back to Activate.
+  function showAppWindow(app, menuEntries) {
+    var win = TrayModel.appWindow(app, openWindows())
+    if (win) {
+      Hyprland.dispatch('hl.dsp.focus({ window = "address:' + win.address + '" })')
+      return true
+    }
+    var entries = menuEntries || []
+    var index = TrayModel.showWindowEntry(app, entries)
+    if (index < 0) return false
+    entries[index].triggered()
+    return true
+  }
+
   function trayTooltip(item) {
     return item.tooltipTitle || item.title || item.id || ""
   }
@@ -317,6 +352,8 @@ BarWidget {
     readonly property string replacementGlyph: TrayModel.replacementGlyph(modelData)
     readonly property bool useReplacementGlyph: replacementGlyph !== ""
     readonly property bool primaryClickOpensMenu: TrayModel.primaryClickOpensMenu(modelData)
+    // Apps that hide to the tray and ignore Activate (Spotify).
+    readonly property var windowApp: TrayModel.windowApp(modelData)
 
     // trayItems already leaves passive items out.
     implicitWidth: root.trayItemExtent
@@ -324,6 +361,18 @@ BarWidget {
 
     function displayMenu(mouse) {
       root.openTrayMenu(trayItemRoot.modelData, trayItemRoot, mouse)
+    }
+
+    function primaryClick(mouse) {
+      if (primaryClickOpensMenu) displayMenu(mouse)
+      else if (!windowApp || !root.showAppWindow(windowApp, windowAppMenu.children ? windowAppMenu.children.values : []))
+        modelData.activate()
+    }
+
+    // Kept open so the "show" entry is already loaded when the icon is clicked.
+    QsMenuOpener {
+      id: windowAppMenu
+      menu: trayItemRoot.windowApp ? trayItemRoot.modelData.menu : null
     }
 
     TrayIcon {
@@ -368,10 +417,8 @@ BarWidget {
           mouse.accepted = true
         } else if (mouse.button === Qt.MiddleButton) {
           trayItemRoot.modelData.secondaryActivate()
-        } else if (trayItemRoot.primaryClickOpensMenu) {
-          trayItemRoot.displayMenu(mouse)
         } else {
-          trayItemRoot.modelData.activate()
+          trayItemRoot.primaryClick(mouse)
         }
       }
       onWheel: function(wheel) {

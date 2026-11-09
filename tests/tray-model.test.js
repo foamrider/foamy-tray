@@ -106,4 +106,44 @@ test("Tab moves to the adjacent tray item that has a menu", () => {
   assert.equal(Model.adjacentMenu([], 0, 1), -1)
 })
 
+test("Spotify left-click shows its window, not a menu", () => {
+  const app = Model.windowApp(spotify)
+  assert.ok(app)
+  assert.equal(Model.windowApp({ id: "x", title: "Spotify" }), app)
+  assert.equal(Model.windowApp(steam), null)
+  assert.equal(Model.windowApp({ id: "spotifyd" }), null)
+  assert.equal(Model.windowApp(null), null)
+})
+
+test("the app's most recently focused window wins", () => {
+  const app = Model.windowApp(spotify)
+  const windows = [
+    { wmClass: "firefox", address: "0x1", focusOrder: 0 },
+    { wmClass: "Spotify", address: "0x2", focusOrder: 4 },
+    { wmClass: "Spotify", address: "0x3", focusOrder: 2 },
+    { wmClass: "Spotify", address: "", focusOrder: 1 }
+  ]
+  assert.equal(Model.appWindow(app, windows).address, "0x3")
+  // Quickshell's HyprlandToplevel.address has no 0x prefix.
+  assert.equal(Model.appWindow(app, [{ wmClass: "Spotify", address: "558a4fde4210" }]).address, "0x558a4fde4210")
+  assert.equal(Model.appWindow(app, [{ wmClass: "firefox", address: "0x1" }]), null)
+  assert.equal(Model.appWindow(app, []), null)
+  assert.equal(Model.appWindow(null, windows), null)
+})
+
+test("finds the menu entry that shows the window", () => {
+  const app = Model.windowApp(spotify)
+  // Spotify's real menu (busctl, read-only).
+  const entries = [
+    { text: "Minimize to Tray" },
+    { text: "Show Spotify" },
+    { isSeparator: true },
+    { text: "Exit" }
+  ]
+  assert.equal(Model.showWindowEntry(app, entries), 1)
+  assert.equal(Model.showWindowEntry(app, [{ text: "Show Spotify", enabled: false }]), -1)
+  assert.equal(Model.showWindowEntry(app, [{ text: "Exit" }]), -1)
+  assert.equal(Model.showWindowEntry(null, entries), -1)
+})
+
 console.log("RESULT: " + passed + " tray model tests passed")

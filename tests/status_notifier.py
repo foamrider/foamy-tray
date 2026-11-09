@@ -6,7 +6,8 @@ harness; it refuses to start on any other bus.
   status_notifier.py <status-file> <events-file>
 
 Line 1 of the status file is the first app's status (Passive/Active/
-NeedsAttention), line 2 the second app's (Passive when missing). Menu clicks
+NeedsAttention), line 2 the second app's, line 3 a Spotify-like app's that
+hides to the tray (Passive when missing). Menu clicks
 are appended to the events file as "<item path> <menu id> <event>".
 """
 import os
@@ -168,8 +169,16 @@ first_menu = Menu("/org/foamy/One/Menu", "/org/foamy/One", [
 second_menu = Menu("/org/foamy/Two/Menu", "/org/foamy/Two", [
     (1, {"label": "Second action"}, []),
 ])
+# Spotify's real menu layout (busctl, read-only).
+spotify_menu = Menu("/org/foamy/Spotify/Menu", "/org/foamy/Spotify", [
+    (2, {"label": "Minimize to Tray", "visible": False}, []),
+    (3, {"label": "Show Spotify"}, []),
+    (4, {"type": "separator"}, []),
+    (5, {"label": "Exit"}, []),
+])
 items = [Item("/org/foamy/One", "foamy-test", "Test app", 0, "/org/foamy/One/Menu"),
-         Item("/org/foamy/Two", "foamy-second", "Second app", 1, "/org/foamy/Two/Menu")]
+         Item("/org/foamy/Two", "foamy-second", "Second app", 1, "/org/foamy/Two/Menu"),
+         Item("/org/foamy/Spotify", "spotify-client", "spotify", 2, "/org/foamy/Spotify/Menu")]
 for item in items:
     GLib.timeout_add(50, item.poll)
 GLib.MainLoop().run()

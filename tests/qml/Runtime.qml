@@ -26,6 +26,7 @@ ShellRoot {
   property real markCenter: 0
   property int first: 0
   property int second: 1
+  property int spotify: -1
   readonly property bool v45: !!bar && "traySectionDragActive" in bar
   readonly property string shots: Quickshell.env("FOAMY_TRAY_SHOTS") || ""
   readonly property string theme: Quickshell.env("FOAMY_TRAY_THEME") || "dark"
@@ -340,6 +341,21 @@ ShellRoot {
         break
       case 43:
         test.check(!t.trayMenuOpen, "Esc at the top level closes the menu")
+        status.setText("Active\nActive\nActive\n")
+        break
+      case 44:
+        test.spotify = test.appIndex(t, "spotify-client")
+        test.check(test.spotify >= 0 && !!t.trayAnchor(test.spotify), "a Spotify-like app hidden to the tray is shown")
+        break
+      case 45:
+        // No Hyprland window offscreen, so the click goes to its "Show Spotify" entry.
+        t.trayAnchor(test.spotify).primaryClick(null)
+        break
+      case 46:
+        var log = test.eventLog()
+        test.check(log.indexOf("/org/foamy/Spotify 3 clicked") !== -1, "left-click on Spotify triggers Show Spotify")
+        test.check(log.indexOf("/org/foamy/Spotify - activate") === -1 && !t.trayMenuOpen,
+          "and neither sends Activate nor opens the menu")
         test.finish()
         break
       }
