@@ -127,6 +127,11 @@ BarWidget {
     trayMenuOpen = false
   }
 
+  // An app that quits or turns passive takes its icon with it. Close its
+  // menu too, instead of leaving the card open on the gone app's entries,
+  // anchored to the whole tray and without the open-panel mark.
+  onTrayItemsChanged: if (trayMenuOpen && trayItems.indexOf(activeTrayItem) < 0) close()
+
   function openTrayMenu(item, anchorItem, mouse) {
     if (!item) return
     if (!item.menu) {

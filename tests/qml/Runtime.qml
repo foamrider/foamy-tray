@@ -31,6 +31,15 @@ ShellRoot {
   readonly property string shots: Quickshell.env("FOAMY_TRAY_SHOTS") || ""
   readonly property string theme: Quickshell.env("FOAMY_TRAY_THEME") || "dark"
 
+  // Stay on the current stage, for up to about 5 s, until `ok`: the
+  // fixture's status poll and the D-Bus round trip take longer under load.
+  property int waits: 0
+  function settle(ok, message) {
+    if (ok) { waits = 0; return check(true, message) }
+    if (++waits < 13) { stage--; return false }
+    waits = 0
+    return check(false, message)
+  }
   function check(ok, message) {
     if (!ok) { console.log("FOAMY FAIL " + positions[orientation] + ": " + message); Qt.exit(1); return false }
     checks++
@@ -350,17 +359,26 @@ ShellRoot {
         break
       case 43:
         test.check(!t.trayMenuOpen, "Esc at the top level closes the menu")
-        status.setText("Active\nActive\nActive\n")
+        t.openTrayMenu(t.trayItems[test.first], t.trayAnchor(test.first), null)
         break
       case 44:
-        test.spotify = test.appIndex(t, "spotify-client")
-        test.check(test.spotify >= 0 && !!t.trayAnchor(test.spotify), "a Spotify-like app hidden to the tray is shown")
+        test.check(t.trayMenuOpen && t.activeTrayItem === t.trayItems[test.first], "the first app's menu is open again")
+        // The app turns passive (or quits) while its menu is open.
+        status.setText("Passive\nActive\n")
         break
       case 45:
+        if (!test.settle(t.trayItems.length === 1 && !t.trayMenuOpen, "a menu closes when its app's icon goes away")) break
+        status.setText("Active\nActive\nActive\n")
+        break
+      case 46:
+        test.spotify = test.appIndex(t, "spotify-client")
+        test.settle(test.spotify >= 0 && !!t.trayAnchor(test.spotify), "a Spotify-like app hidden to the tray is shown")
+        break
+      case 47:
         // No Hyprland window offscreen, so the click goes to its "Show Spotify" entry.
         t.trayAnchor(test.spotify).primaryClick(null)
         break
-      case 46:
+      case 48:
         var log = test.eventLog()
         test.check(log.indexOf("/org/foamy/Spotify 3 clicked") !== -1, "left-click on Spotify triggers Show Spotify")
         test.check(log.indexOf("/org/foamy/Spotify - activate") === -1 && !t.trayMenuOpen,
