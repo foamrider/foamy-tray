@@ -224,8 +224,9 @@ BarWidget {
     return true
   }
 
+  // Bounded: the host sizes its tooltip popup to the app's text.
   function trayTooltip(item) {
-    return item.tooltipTitle || item.title || item.id || ""
+    return TrayModel.tooltipText(item)
   }
 
   // The 4.5 host only creates section delegates while their parent is visible.

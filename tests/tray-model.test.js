@@ -162,4 +162,38 @@ test("the glyphs setting replaces an app's icon", () => {
   assert.ok(Model.windowApp(spotify))
 })
 
+test("tooltips are the app's text, bounded before the host sizes its popup", () => {
+  const LINES = Model.TOOLTIP_LINES
+  const CHARS = Model.TOOLTIP_LINE_CHARS
+  // Ordinary tooltips pass through unchanged, markup included (the host
+  // draws plain text).
+  assert.equal(Model.tooltipText(spotify), "Warpaint – Love Is To Die")
+  assert.equal(Model.tooltipText(steam), "Steam")
+  assert.equal(Model.tooltipText({ id: "nextcloud" }), "nextcloud")
+  assert.equal(Model.tooltipText({ tooltipTitle: "Nextcloud\nSynced" }), "Nextcloud\nSynced")
+  assert.equal(Model.tooltipText({ tooltipTitle: "<b>x</b>" }), "<b>x</b>")
+  assert.equal(Model.tooltipText(null), "")
+  assert.equal(Model.tooltipText({}), "")
+  const exact = Array(LINES).fill("a".repeat(CHARS)).join("\n")
+  assert.equal(Model.tooltipText({ tooltipTitle: exact }), exact)
+  // A long line is cut, and the cut shows.
+  assert.equal(Model.tooltipText({ tooltipTitle: "b".repeat(CHARS + 1) }), "b".repeat(CHARS) + "…")
+  // Too many lines: the first ones are kept, the last kept one marked.
+  const tall = Model.tooltipText({ tooltipTitle: "line\n".repeat(LINES * 4) }).split("\n")
+  assert.equal(tall.length, LINES)
+  assert.equal(tall[LINES - 1], "line…")
+  assert.ok(tall.slice(0, -1).every(line => line === "line"))
+  // \r\n and \r count as one line break each.
+  assert.equal(Model.tooltipText({ tooltipTitle: "a\r\nb\rc" }), "a\nb\nc")
+  // The reproduced case: 20,000 characters plus 60 lines.
+  const huge = Model.tooltipText({ tooltipTitle: "A".repeat(20000) + "\nline".repeat(60) })
+  assert.equal(huge, "A".repeat(CHARS) + "…")
+  // A cut never splits a surrogate pair.
+  const emoji = Model.tooltipText({ tooltipTitle: "x".repeat(CHARS - 1) + "\u{1f600}" })
+  assert.equal(emoji, "x".repeat(CHARS - 1) + "…")
+  // A multi-megabyte title is cut from its start, not scanned whole.
+  const big = Model.tooltipText({ tooltipTitle: "z\n".repeat(4 * 1024 * 1024) })
+  assert.equal(big.split("\n").length, LINES)
+})
+
 console.log("RESULT: " + passed + " tray model tests passed")

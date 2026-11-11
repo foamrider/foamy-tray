@@ -139,6 +139,40 @@ function warpConnectionIcon(item) {
   })
 }
 
+// The bar tooltip for a tray item: its tooltip title, else its Title or Id.
+// All three come from the app, and the host draws the text unwrapped, one
+// line per newline, in a popup sized to fit it: a 20,000-character title
+// made a 160,000 px wide tooltip and about 550 MB of buffer on hover. Keep
+// at most TOOLTIP_LINES lines of TOOLTIP_LINE_CHARS characters, far more
+// than any real tray tooltip uses, and end a cut line with an ellipsis so
+// the cut shows. The text is sliced before it is split, so an oversized
+// title is never scanned whole.
+var TOOLTIP_LINES = 8
+var TOOLTIP_LINE_CHARS = 160
+
+// The first `length` characters of `value`, without half a surrogate pair.
+function clip(value, length) {
+  if (value.length <= length) return value
+  var code = value.charCodeAt(length - 1)
+  return value.slice(0, code >= 0xd800 && code <= 0xdbff ? length - 1 : length)
+}
+
+function tooltipText(item) {
+  if (!item) return ""
+  var full = String(item.tooltipTitle || item.title || item.id || "")
+  var budget = TOOLTIP_LINES * (TOOLTIP_LINE_CHARS + 2)
+  var lines = full.slice(0, budget).split(/\r\n|\r|\n/)
+  var more = full.length > budget || lines.length > TOOLTIP_LINES
+  lines = lines.slice(0, TOOLTIP_LINES)
+  for (var i = 0; i < lines.length; i++) {
+    var line = clip(lines[i], TOOLTIP_LINE_CHARS)
+    var last = i === lines.length - 1
+    if (line.length < lines[i].length || (last && more)) line += "\u2026"
+    lines[i] = line
+  }
+  return lines.join("\n")
+}
+
 // Menu rows the tray hides: the root entry that only repeats the app's name,
 // separators leading the root menu, and the second of adjacent separators.
 // `entries` is an array of { text, isSeparator, hasChildren }.
@@ -191,6 +225,9 @@ if (typeof module !== "undefined") {
     primaryClickOpensMenu: primaryClickOpensMenu,
     monochrome: monochrome,
     warpConnectionIcon: warpConnectionIcon,
+    tooltipText: tooltipText,
+    TOOLTIP_LINES: TOOLTIP_LINES,
+    TOOLTIP_LINE_CHARS: TOOLTIP_LINE_CHARS,
     hiddenRows: hiddenRows,
     cursorStops: cursorStops,
     adjacentMenu: adjacentMenu

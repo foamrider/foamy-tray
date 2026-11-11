@@ -149,6 +149,8 @@ ShellRoot {
     }
   }
   readonly property var bar: host.item
+  // The host's tooltip label font (plugins/bar/Bar.qml tooltipLabel).
+  TextMetrics { id: tooltipMetrics; font.pixelSize: Style.font.body }
   FileView { id: status; path: Quickshell.env("FOAMY_TRAY_STATUS") }
   FileView { id: events; path: Quickshell.env("FOAMY_TRAY_EVENTS"); blockLoading: true; printErrors: false }
   readonly property var lightTheme: ({"bar.background": "#fafafa", "bar.text": "#202020", "popups.background": "#fafafa",
@@ -262,6 +264,13 @@ ShellRoot {
         test.check(t.trayItems.length === 2 && test.first >= 0 && test.second >= 0 && !!t.trayItems[test.first].menu,
           "two apps with menus are shown")
         test.check(!t.trayMenu, "menu body is not built before the first open")
+        test.check(t.trayTooltip(t.trayItems[test.first]) === "Test app", "an app without a tooltip shows its title")
+        // The host sizes its tooltip popup to the text: the second app's
+        // 20,000-character title would make it about 160,000 px wide.
+        var tip = t.trayTooltip(t.trayItems[test.second])
+        tooltipMetrics.text = tip
+        test.check(tip.indexOf("<b>Second</b> AAA") === 0 && tip.length <= TrayModel.TOOLTIP_LINE_CHARS + 1
+          && tooltipMetrics.width < 1920, "an oversized app tooltip is bounded: " + tip.length + " chars, " + tooltipMetrics.width + " px")
         test.check(TrayModel.replacementGlyph({ id: "steam" }) === String.fromCharCode(0xf1b6)
           && TrayModel.replacementGlyph({ id: "remmina-icon" }) === String.fromCharCode(0xeb3a),
           "escaped Nerd Font glyphs survive in the QML engine")
