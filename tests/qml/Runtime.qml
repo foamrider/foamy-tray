@@ -196,7 +196,7 @@ ShellRoot {
         status.setText("Active\n")
         break
       case 2:
-        test.check(t.trayItems.length === 1 && t.visible, "active application icon joins hosted widget")
+        if (!test.settle(t.trayItems.length === 1 && t.visible, "active application icon joins hosted widget")) break
         test.check((t.vertical ? t.implicitHeight : t.implicitWidth) === 120 + t.trayItemExtent, "app and hosted sizes add without overlap")
         test.check(t.sectionHost.x === 0 && t.sectionHost.y === 0, "end-fixed tray keeps app at its fixed edge")
         test.check(slotFor("foamy.tray").hostsTraySection === true, "bar treats the tray as the tray-section host")
@@ -218,7 +218,7 @@ ShellRoot {
         status.setText("Passive\n")
         break
       case 6:
-        test.check(!t.visible && t.sectionExtent === 0, "empty tray takes no space outside a drag")
+        if (!test.settle(!t.visible && t.sectionExtent === 0, "empty tray takes no space outside a drag")) break
         // Exercise the actual bar's geometry and drop-target code without persisting a move.
         bar.barConfig = {position: test.positions[test.orientation], background: "opaque",
           layout: {left: ["foamy.tray"], center: [], right: [{id: "test.widget", extent: 80}], tray: []}}
@@ -270,8 +270,8 @@ ShellRoot {
       case 31:
         test.first = test.appIndex(t, "foamy-test")
         test.second = test.appIndex(t, "foamy-second")
-        test.check(t.trayItems.length === 2 && test.first >= 0 && test.second >= 0 && !!t.trayItems[test.first].menu,
-          "two apps with menus are shown")
+        if (!test.settle(t.trayItems.length === 2 && test.first >= 0 && test.second >= 0 && !!t.trayItems[test.first].menu,
+          "two apps with menus are shown")) break
         test.check(!t.trayMenu, "menu body is not built before the first open")
         test.check(t.trayTooltip(t.trayItems[test.first]) === "Test app", "an app without a tooltip shows its title")
         // The host sizes its tooltip popup to the text: the second app's
@@ -286,7 +286,7 @@ ShellRoot {
         t.openTrayMenu(t.trayItems[test.first], t.trayAnchor(test.first), null)
         break
       case 32:
-        test.check(t.trayMenuOpen && !!m && m.entries.length === 5, "menu opens with the app's DBusMenu entries")
+        if (!test.settle(t.trayMenuOpen && !!m && m.entries.length === 5, "menu opens with the app's DBusMenu entries")) break
         test.check(JSON.stringify(m.stops) === "[0,2,4]", "cursor skips the separator and the disabled entry")
         test.check(m.cursor.index === -1, "no row is lit on open")
         // Menu text is the kit menu's size (FoamyMenu: body), in logical
@@ -338,10 +338,10 @@ ShellRoot {
         m.tabRequested(1)
         break
       case 37:
+        if (!test.settle(m.entries.length === 1 && m.entries[0].text === "Second action" && m.cursor.index === -1,
+          "the next menu starts at its top, unlit")) break
         test.check(t.activeTrayItem === t.trayItems[test.second] && t.openPanelIndicatorItem === t.trayAnchor(test.second),
           "Tab opens the next app's menu")
-        test.check(m.entries.length === 1 && m.entries[0].text === "Second action" && m.cursor.index === -1,
-          "the next menu starts at its top, unlit")
         if (test.v45) test.check(Math.abs(Math.abs(test.slotFor("foamy.tray").panelIndicatorCenter - test.markCenter) - t.trayItemExtent) < 1,
           "4.5 mark moves under the icon whose menu is open")
         test.shot("tab")
@@ -358,7 +358,7 @@ ShellRoot {
         test.check(!t.trayMenuOpen, "activating an entry closes the menu")
         break
       case 41:
-        test.check(test.eventLog().indexOf("/org/foamy/One 1 clicked") !== -1, "Enter sends the entry's click to the app")
+        if (!test.settle(test.eventLog().indexOf("/org/foamy/One 1 clicked") !== -1, "Enter sends the entry's click to the app")) break
         t.openTrayMenu(t.trayItems[test.first], t.trayAnchor(test.first), null)
         break
       case 42:
@@ -388,7 +388,7 @@ ShellRoot {
         break
       case 48:
         var log = test.eventLog()
-        test.check(log.indexOf("/org/foamy/Spotify 3 clicked") !== -1, "left-click on Spotify triggers Show Spotify")
+        if (!test.settle(log.indexOf("/org/foamy/Spotify 3 clicked") !== -1, "left-click on Spotify triggers Show Spotify")) break
         test.check(log.indexOf("/org/foamy/Spotify - activate") === -1 && !t.trayMenuOpen,
           "and neither sends Activate nor opens the menu")
         test.finish()
