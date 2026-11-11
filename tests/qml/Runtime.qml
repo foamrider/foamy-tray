@@ -297,6 +297,14 @@ ShellRoot {
           for (var i = 0; i < item.children.length; i++) walk(item.children[i])
         })(m)
         test.check(sizes.length === 1 && sizes[0] === FoamyStyle.font.body, "menu text is the kit menu's size: " + sizes)
+        var labels = []
+        ;(function walk(item) {
+          if (item.lineCount !== undefined && String(item.text).indexOf("Offline mode") === 0) labels.push(item)
+          for (var i = 0; i < item.children.length; i++) walk(item.children[i])
+        })(m)
+        test.check(labels.length === 1 && labels[0].lineCount === 1 && labels[0].height <= FoamyStyle.controlHeight
+          && labels[0].text === "Offline mode second line third line",
+          "a multi-line app label stays on its row: " + labels.map(function(l) { return l.lineCount + " lines, " + l.height + " px" }))
         test.check(t.openPanelIndicatorItem === t.trayAnchor(test.first), "open-panel mark targets the clicked icon")
         if (test.v45) {
           var slot = test.slotFor("foamy.tray")

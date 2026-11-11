@@ -173,6 +173,14 @@ function tooltipText(item) {
   return lines.join("\n")
 }
 
+// A menu entry's label on one line. Labels come from the app and may hold
+// line breaks; a row draws one line of text, so a break would spill the
+// rest over the neighbouring rows. Breaks become spaces and the row elides
+// whatever does not fit.
+function menuLabel(value) {
+  return String(value === undefined || value === null ? "" : value).replace(/\s*[\r\n\u2028\u2029]+\s*/g, " ")
+}
+
 // Menu rows the tray hides: the root entry that only repeats the app's name,
 // separators leading the root menu, and the second of adjacent separators.
 // `entries` is an array of { text, isSeparator, hasChildren }.
@@ -226,6 +234,7 @@ if (typeof module !== "undefined") {
     monochrome: monochrome,
     warpConnectionIcon: warpConnectionIcon,
     tooltipText: tooltipText,
+    menuLabel: menuLabel,
     TOOLTIP_LINES: TOOLTIP_LINES,
     TOOLTIP_LINE_CHARS: TOOLTIP_LINE_CHARS,
     hiddenRows: hiddenRows,

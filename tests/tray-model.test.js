@@ -196,4 +196,14 @@ test("tooltips are the app's text, bounded before the host sizes its popup", () 
   assert.equal(big.split("\n").length, LINES)
 })
 
+test("menu labels stay on one line", () => {
+  assert.equal(Model.menuLabel("Quit"), "Quit")
+  assert.equal(Model.menuLabel("Offline mode\nsecond line\r\nthird"), "Offline mode second line third")
+  assert.equal(Model.menuLabel("a \n\n b\u2028c\u2029d\re"), "a b c d e")
+  assert.equal(Model.menuLabel("  _Open  "), "  _Open  ")
+  assert.equal(Model.menuLabel(undefined), "")
+  assert.equal(Model.menuLabel(null), "")
+  assert.equal(Model.menuLabel(3), "3")
+})
+
 console.log("RESULT: " + passed + " tray model tests passed")

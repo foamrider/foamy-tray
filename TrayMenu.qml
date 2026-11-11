@@ -75,7 +75,7 @@ PanelKeyCatcher {
   // delegates synchronously, so nothing may run on them afterwards.
   function goInto(entry) {
     wheel.scrollTo(0, false)
-    enter(entry, String(entry.text || ""))
+    enter(entry, TrayModel.menuLabel(entry.text))
   }
 
   function goBack() {
@@ -236,7 +236,7 @@ PanelKeyCatcher {
           readonly property bool separator: !!modelData.isSeparator
           readonly property bool rowEnabled: modelData.enabled !== false
           readonly property int stop: menu.stopFor(index)
-          readonly property string label: String(modelData.text || "")
+          readonly property string label: TrayModel.menuLabel(modelData.text)
           readonly property bool checkable: !separator && modelData.buttonType !== undefined
             && modelData.buttonType !== QsMenuButtonType.None
           readonly property bool checked: modelData.checkState === Qt.Checked

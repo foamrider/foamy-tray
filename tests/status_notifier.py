@@ -165,7 +165,8 @@ first_menu = Menu("/org/foamy/One/Menu", "/org/foamy/One", [
         (31, {"label": "Radio A", "toggle-type": "radio", "toggle-state": 0}, []),
         (32, {"label": "Radio B", "toggle-type": "radio", "toggle-state": 1}, []),
     ]),
-    (4, {"label": "Offline mode", "enabled": False}, []),
+    # A label with line breaks: the row must still draw one line.
+    (4, {"label": "Offline mode\nsecond line\nthird line", "enabled": False}, []),
     (5, {"label": "Quit"}, []),
 ])
 second_menu = Menu("/org/foamy/Two/Menu", "/org/foamy/Two", [
