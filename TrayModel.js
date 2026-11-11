@@ -90,10 +90,6 @@ function showWindowEntry(app, entries) {
   return -1
 }
 
-function itemNamed(item, kind) {
-  return appKind(item) === kind
-}
-
 // A glyph from the widget's `glyphs` setting in shell.json: an object from
 // app name to glyph, matched like APPS (Id, then Title), e.g.
 // { "spotify": "\u{f1bc}" }. Empty when nothing matches.
@@ -187,7 +183,6 @@ function adjacentMenu(hasMenu, current, direction) {
 if (typeof module !== "undefined") {
   module.exports = {
     appKind: appKind,
-    itemNamed: itemNamed,
     windowApp: windowApp,
     appWindow: appWindow,
     showWindowEntry: showWindowEntry,
