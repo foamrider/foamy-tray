@@ -176,6 +176,14 @@ def main():
     parser.add_argument("--shell", default=str(PLUGIN / "tests/qml/Runtime.qml"),
                         help="test QML to run (default tests/qml/Runtime.qml), e.g. a capture script for an older checkout")
     args = parser.parse_args()
+    if args.shots:
+        # Composing runs after the test; fail before it rather than with a
+        # traceback that leaves the run directory behind.
+        try:
+            import PIL  # noqa: F401
+        except ImportError:
+            print("runtime.py: --shots needs Pillow (python-pillow)", file=sys.stderr)
+            return 2
     if not (KIT / "preview/harness.py").exists():
         print(f"SKIP: foamy-kit harness not found at {KIT} (set FOAMY_KIT)")
         return 0
