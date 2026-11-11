@@ -14,7 +14,7 @@ host's plugins/bar/Bar.qml is loaded with its PanelWindow swapped for
 tests/qml/FakeBarWindow.qml; everything else is the host's code. Bar helper
 commands (omarchy-bar …) resolve to no-op stubs, no host script or binary is
 run. Each run gets the harness's private D-Bus session (foamy-kit 0.2.0):
-two synthetic apps (tests/status_notifier.py) provide tray items and
+three synthetic apps (tests/status_notifier.py) provide tray items and
 DBusMenus there, and the desktop's tray is never seen or touched.
 
 FOAMY_TRAY_KEEP=1 keeps the run directory (log, events) after a pass.

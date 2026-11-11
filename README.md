@@ -86,11 +86,13 @@ omarchy plugin validate .
 `tests/runtime.py` loads the host's real bar from the installed Omarchy 4.5
 shell (`/usr/share/omarchy/shell`; set `FOAMY_HOST_45` to use another tree)
 offscreen, in temporary HOME and XDG directories, with the bar's window
-swapped for an offscreen one. Two synthetic
+swapped for an offscreen one. Three synthetic
 apps on the harness's private D-Bus session provide tray items and
 menus, so the desktop's own tray is never seen or touched, and no host script
-runs. It checks the 4.5 tray-section hooks in all four bar positions and the
-menu's keyboard model. `--shots DIR` saves screenshots. `--host 4.0` and
+runs. It checks the 4.5 tray-section hooks in all four bar positions, the
+menu's keyboard model, and app data the tray must bound: an oversized
+tooltip, a multi-line menu label, and an app whose icon goes away while
+its menu is open. `--shots DIR` saves screenshots. `--host 4.0` and
 `--host both` run 4.0 only against an Omarchy 4.0 shell tree in
 `FOAMY_HOST_40`, and print a SKIP line without one.
 

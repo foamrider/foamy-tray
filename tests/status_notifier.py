@@ -1,4 +1,4 @@
-"""Two synthetic tray apps with DBusMenus, for tests/runtime.py.
+"""Three synthetic tray apps with DBusMenus, for tests/runtime.py.
 
 Runs only on the private bus that tests/runtime.py gets from the foamy-kit
 harness; it refuses to start on any other bus.

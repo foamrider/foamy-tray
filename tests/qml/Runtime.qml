@@ -10,7 +10,7 @@ import "plugin/kit"
 import "plugin/TrayModel.js" as TrayModel
 
 // Offscreen integration test, run by tests/runtime.py: the host's real
-// Bar.qml (4.5, or 4.0 from FOAMY_HOST_40) hosts Foamy Tray, and two synthetic apps on a
+// Bar.qml (4.5, or 4.0 from FOAMY_HOST_40) hosts Foamy Tray, and three synthetic apps on a
 // private D-Bus session supply tray items and DBusMenus. Covers the 4.5
 // tray-section hooks (sectionHost, sectionEdge, sectionShown, tray layout,
 // drag drop target), passive items, the open-panel mark, and the menu's
