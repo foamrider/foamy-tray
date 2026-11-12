@@ -38,6 +38,7 @@ class Menu(dbus.service.Object):
 
     def __init__(self, path, owner, tree):
         super().__init__(bus, path)
+        self.path = path
         self.owner = owner
         self.items = {}
         self.children = {}
@@ -112,14 +113,15 @@ class Menu(dbus.service.Object):
 
 
 class Item(dbus.service.Object):
-    def __init__(self, path, item_id, title, line, menu_path, tooltip=""):
+    def __init__(self, path, item_id, title, line, menu, tooltip=""):
         super().__init__(bus, path)
         self.path = path
         self.item_id = item_id
         self.title = title
         self.tooltip = tooltip
         self.line = line
-        self.menu_path = menu_path
+        # The item's exported Menu, or None for an app without a DBusMenu.
+        self.menu_path = menu.path if menu else None
         self.status = "Passive"
         self.registered = False
 
@@ -194,11 +196,11 @@ spotify_menu = Menu("/org/foamy/Spotify/Menu", "/org/foamy/Spotify", [
     (4, {"type": "separator"}, []),
     (5, {"label": "Exit"}, []),
 ])
-items = [Item("/org/foamy/One", "foamy-test", "Test app", 0, "/org/foamy/One/Menu"),
+items = [Item("/org/foamy/One", "foamy-test", "Test app", 0, first_menu),
          # An oversized, multi-line tooltip title with markup, as any app may send.
-         Item("/org/foamy/Two", "foamy-second", "Second app", 1, "/org/foamy/Two/Menu",
+         Item("/org/foamy/Two", "foamy-second", "Second app", 1, second_menu,
               "<b>Second</b> " + "A" * 20000 + "\nline" * 60),
-         Item("/org/foamy/Spotify", "spotify-client", "spotify", 2, "/org/foamy/Spotify/Menu"),
+         Item("/org/foamy/Spotify", "spotify-client", "spotify", 2, spotify_menu),
          Item("/org/foamy/Plain", "foamy-plain", "Plain app", 3, None)]
 for item in items:
     GLib.timeout_add(50, item.poll)

@@ -1,6 +1,5 @@
 import Quickshell
 import QtQuick
-import QtQuick.Controls
 import QtQuick.Effects
 import Quickshell.Hyprland
 import Quickshell.Services.SystemTray

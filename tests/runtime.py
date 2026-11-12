@@ -95,7 +95,7 @@ def compose(shots, line, theme):
     draw = ImageDraw.Draw(screen)
     for row in range(1080):
         t = row / 1079
-        draw.line([(0, row), (1919, row)], fill=tuple(int(a + (b - a) * t) for a, b in zip(top, bottom)) + (255,))
+        draw.line([(0, row), (1919, row)], fill=tuple(int(a + (b - a) * t) for a, b in zip(top, bottom, strict=True)) + (255,))
     bar = Image.open(bar_path).convert("RGBA")
     screen.alpha_composite(bar, (max(0, bar_x), max(0, bar_y)))
     if card_path != "-":
