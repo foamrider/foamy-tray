@@ -188,6 +188,17 @@ test("menu labels stay on one line", () => {
   assert.equal(Model.menuLabel("a \n\n b\u2028c\u2029d\re"), "a b c d e")
   assert.equal(Model.menuLabel("  _Open  "), "  _Open  ")
   assert.equal(Model.menuLabel(undefined), "")
+  // Same result as the one-regex form it replaces, on edge cases.
+  const regexForm = (v) => String(v).replace(/\s*[\r\n\u2028\u2029]+\s*/g, " ")
+  for (const label of ["\n", "\n\n", " \n ", "a\n", "\na", " a \n b ", "a\n \n b", "a \n\t\n \nb", "\t\n\u2028 x", "a\r\n", "x\u00a0\ny", "a\n\n\n", "  \n  \n  "]) {
+    assert.equal(Model.menuLabel(label), regexForm(label), JSON.stringify(label))
+  }
+  // Linear in the label: a long run of spaces with no break after it took
+  // seconds with the regex (80 000 spaces: about 4 s), and the menu waits.
+  const started = Date.now()
+  assert.equal(Model.menuLabel("Item" + " ".repeat(400000) + "X").length, 400005)
+  assert.equal(Model.menuLabel("Item\n" + " ".repeat(400000) + "X"), "Item X")
+  assert.ok(Date.now() - started < 1000, `took ${Date.now() - started} ms`)
   assert.equal(Model.menuLabel(null), "")
   assert.equal(Model.menuLabel(3), "3")
 })
