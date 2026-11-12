@@ -34,6 +34,8 @@ PLUGIN = Path(__file__).resolve().parents[1]
 KIT = Path(os.environ.get("FOAMY_KIT", Path.home() / "GitHub/Personal/foamy-kit"))
 # The installed shell is 4.5; set before the harness reads it.
 os.environ.setdefault("FOAMY_HOST_45", "/usr/share/omarchy/shell")
+# Host commands the bar may run, as no-op stand-ins ahead of the harness's
+# isolated PATH. Any other host command fails the run (Run.host_commands()).
 STUBS = ("omarchy-bar", "omarchy-bar-text-color", "omarchy-shell", "omarchy", "hyprctl")
 
 
@@ -105,13 +107,15 @@ def run_host(host_name, shots, theme, plugin, shell_path=PLUGIN / "tests/qml/Run
     sys.path.insert(0, str(KIT / "preview"))
     import harness
     shell = Path(shell_path).read_text()
-    run = harness.Run(host_name, shell, plugin=plugin, theme=theme, prefix=f"foamy-tray-runtime-{host_name}-")
+    run = harness.Run(
+        host_name,
+        shell,
+        plugin=plugin,
+        theme=theme,
+        prefix=f"foamy-tray-runtime-{host_name}-",
+        fakebin={name: "#!/bin/sh\nexit 0\n" for name in STUBS},
+    )
     build_hostbar(run.host, run.root / "hostbar")
-    stubs = run.base / "stubs"
-    stubs.mkdir()
-    for name in STUBS:
-        (stubs / name).write_text("#!/bin/sh\nexit 0\n")
-        (stubs / name).chmod(0o755)
     status = run.base / "status"
     events = run.base / "events"
     status.write_text("Passive\n")
@@ -119,7 +123,6 @@ def run_host(host_name, shots, theme, plugin, shell_path=PLUGIN / "tests/qml/Run
     raw = run.base / "raw-shots"
     raw.mkdir()
     run.env.update({
-        "PATH": f"{stubs}:{os.environ.get('PATH', '/usr/bin')}",
         "FOAMY_TRAY_STATUS": str(status),
         "FOAMY_TRAY_EVENTS": str(events),
         "FOAMY_TRAY_THEME": theme,
@@ -142,13 +145,16 @@ def run_host(host_name, shots, theme, plugin, shell_path=PLUGIN / "tests/qml/Run
         if fixture is not None:
             os.killpg(fixture.pid, signal.SIGTERM)
             fixture.wait(timeout=5)
+    host_commands = run.host_commands()
     run.ok = "FOAMY DONE" in run.log and "FOAMY FAIL" not in run.log \
-        and not any(marker in run.log for marker in harness.FAILURE_MARKERS)
+        and not any(marker in run.log for marker in harness.FAILURE_MARKERS) and not host_commands
     result = next((line.split("FOAMY RESULT ", 1)[1] for line in run.log.splitlines() if "FOAMY RESULT" in line), "no result")
     ok = run.ok
     print(f"{'PASS' if ok else 'FAIL'} runtime {host_name} ({theme}): {result}")
     if not ok:
         print("\n".join("    " + line for line in (run.failures() or run.log.splitlines()[-40:])))
+        for line in host_commands:
+            print(f"    host command run: {line}")
         print(f"    log kept at {run.base}")
         return False
     if shots:

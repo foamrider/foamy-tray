@@ -4,6 +4,7 @@ import Quickshell.Io
 import qs.Commons
 import qs.Commons as Commons
 import qs.Ui
+import "harness"
 import "hostbar" as Host
 import "plugin" as Foamy
 import "plugin/kit"
@@ -30,17 +31,26 @@ ShellRoot {
   readonly property string shots: Quickshell.env("FOAMY_TRAY_SHOTS") || ""
   readonly property string theme: Quickshell.env("FOAMY_TRAY_THEME") || "dark"
 
-  // Stay on the current stage, for up to about 5 s, until `ok`: the
-  // fixture's status poll and the D-Bus round trip take longer under load.
-  property int waits: 0
-  function settle(ok, message) {
-    if (ok) { waits = 0; return check(true, message) }
-    if (++waits < 13) { stage--; return false }
-    waits = 0
-    return check(false, message)
+  // Stages run back to back. A stage whose check needs an asynchronous
+  // result (the fixture's status poll, a D-Bus round trip, the bar's
+  // relayout) gates on it with settle(): when the condition is not true yet,
+  // the stage runs again once it is, or fails after `settleMs`.
+  readonly property int settleMs: 15000
+  property bool waiting: false
+  FoamyWait { id: wait }
+  function settle(condition, message) {
+    if (condition()) return check(true, message)
+    stage--
+    waiting = true
+    wait.waitFor(condition, settleMs, function(ok) {
+      waiting = false
+      if (ok) driver.restart()
+      else check(false, message + " (not true after " + settleMs + " ms)")
+    })
+    return false
   }
   function check(ok, message) {
-    if (!ok) { console.log("FOAMY FAIL " + positions[orientation] + ": " + message); Qt.exit(1); return false }
+    if (!ok) { finished = true; console.log("FOAMY FAIL " + positions[orientation] + ": " + message); Qt.exit(1); return false }
     checks++
     console.log("PASS: " + positions[orientation] + ": " + message)
     return true
@@ -154,6 +164,7 @@ ShellRoot {
     onLoaded: {
       item.barWidgetRegistry = registry
       test.configure("right", true)
+      driver.start()
     }
   }
   readonly property var bar: host.item
@@ -164,11 +175,14 @@ ShellRoot {
   readonly property var lightTheme: ({"bar.background": "#fafafa", "bar.text": "#202020", "popups.background": "#fafafa",
     "popups.text": "#202020", "popups.border": "#404040"})
 
+  // One stage per turn of the event loop, so bindings and signals settle in between.
   Timer {
-    interval: 400
-    running: !!test.bar
-    repeat: true
-    onTriggered: {
+    id: driver
+    interval: 1
+    onTriggered: test.runStage()
+  }
+  property bool finished: false
+  function runStage() {
       var t = test.tray()
       var m = t ? t.trayMenu : null
       switch (test.stage++) {
@@ -189,7 +203,7 @@ ShellRoot {
         status.setText("Active\n")
         break
       case 2:
-        if (!test.settle(t.trayItems.length === 1 && t.visible, "active application icon joins hosted widget")) break
+        if (!test.settle(function() { return t.trayItems.length === 1 && t.visible }, "active application icon joins hosted widget")) break
         test.check((t.vertical ? t.implicitHeight : t.implicitWidth) === 120 + t.trayItemExtent, "app and hosted sizes add without overlap")
         test.check(t.sectionHost.x === 0 && t.sectionHost.y === 0, "end-fixed tray keeps app at its fixed edge")
         test.check(slotFor("foamy.tray").hostsTraySection === true, "bar treats the tray as the tray-section host")
@@ -211,7 +225,7 @@ ShellRoot {
         status.setText("Passive\n")
         break
       case 6:
-        if (!test.settle(!t.visible && t.sectionExtent === 0, "empty tray takes no space outside a drag")) break
+        if (!test.settle(function() { return !t.visible && t.sectionExtent === 0 }, "empty tray takes no space outside a drag")) break
         // Exercise the actual bar's geometry and drop-target code without persisting a move.
         bar.barConfig = {position: test.positions[test.orientation], background: "opaque",
           layout: {left: ["foamy.tray"], center: [], right: [{id: "test.widget", extent: 80}], tray: []}}
@@ -252,10 +266,11 @@ ShellRoot {
         status.setText("Active\nActive\n")
         break
       case 31:
-        test.first = test.appIndex(t, "foamy-test")
-        test.second = test.appIndex(t, "foamy-second")
-        if (!test.settle(t.trayItems.length === 2 && test.first >= 0 && test.second >= 0 && !!t.trayItems[test.first].menu,
-          "two apps with menus are shown")) break
+        if (!test.settle(function() {
+          test.first = test.appIndex(t, "foamy-test")
+          test.second = test.appIndex(t, "foamy-second")
+          return t.trayItems.length === 2 && test.first >= 0 && test.second >= 0 && !!t.trayItems[test.first].menu
+        }, "two apps with menus are shown")) break
         test.check(!t.trayMenu, "menu body is not built before the first open")
         test.check(t.trayTooltip(t.trayItems[test.first]) === "Test app", "an app without a tooltip shows its title")
         // The host sizes its tooltip popup to the text: the second app's
@@ -270,7 +285,7 @@ ShellRoot {
         t.openTrayMenu(t.trayItems[test.first], t.trayAnchor(test.first), null)
         break
       case 32:
-        if (!test.settle(t.trayMenuOpen && !!m && m.entries.length === 5, "menu opens with the app's DBusMenu entries")) break
+        if (!test.settle(function() { m = t.trayMenu; return t.trayMenuOpen && !!m && m.entries.length === 5 }, "menu opens with the app's DBusMenu entries")) break
         test.check(JSON.stringify(m.stops) === "[0,2,4]", "cursor skips the separator and the disabled entry")
         test.check(m.cursor.index === -1, "no row is lit on open")
         // Menu text is the kit menu's size (FoamyMenu: body), in logical
@@ -320,7 +335,7 @@ ShellRoot {
         m.tabRequested(1)
         break
       case 37:
-        if (!test.settle(m.entries.length === 1 && m.entries[0].text === "Second action" && m.cursor.index === -1,
+        if (!test.settle(function() { return m.entries.length === 1 && m.entries[0].text === "Second action" && m.cursor.index === -1 },
           "the next menu starts at its top, unlit")) break
         test.check(t.activeTrayItem === t.trayItems[test.second] && t.openPanelIndicatorItem === t.trayAnchor(test.second),
           "Tab opens the next app's menu")
@@ -340,7 +355,7 @@ ShellRoot {
         test.check(!t.trayMenuOpen, "activating an entry closes the menu")
         break
       case 41:
-        if (!test.settle(test.eventLog().indexOf("/org/foamy/One 1 clicked") !== -1, "Enter sends the entry's click to the app")) break
+        if (!test.settle(function() { return test.eventLog().indexOf("/org/foamy/One 1 clicked") !== -1 }, "Enter sends the entry's click to the app")) break
         t.openTrayMenu(t.trayItems[test.first], t.trayAnchor(test.first), null)
         break
       case 42:
@@ -357,26 +372,28 @@ ShellRoot {
         status.setText("Passive\nActive\n")
         break
       case 45:
-        if (!test.settle(t.trayItems.length === 1 && !t.trayMenuOpen, "a menu closes when its app's icon goes away")) break
+        if (!test.settle(function() { return t.trayItems.length === 1 && !t.trayMenuOpen }, "a menu closes when its app's icon goes away")) break
         status.setText("Active\nActive\nActive\n")
         break
       case 46:
-        test.spotify = test.appIndex(t, "spotify-client")
-        test.settle(test.spotify >= 0 && !!t.trayAnchor(test.spotify), "a Spotify-like app hidden to the tray is shown")
+        test.settle(function() {
+          test.spotify = test.appIndex(t, "spotify-client")
+          return test.spotify >= 0 && !!t.trayAnchor(test.spotify)
+        }, "a Spotify-like app hidden to the tray is shown")
         break
       case 47:
         // No Hyprland window offscreen, so the click goes to its "Show Spotify" entry.
         t.trayAnchor(test.spotify).primaryClick(null)
         break
       case 48:
-        var log = test.eventLog()
-        if (!test.settle(log.indexOf("/org/foamy/Spotify 3 clicked") !== -1, "left-click on Spotify triggers Show Spotify")) break
-        test.check(log.indexOf("/org/foamy/Spotify - activate") === -1 && !t.trayMenuOpen,
+        if (!test.settle(function() { return test.eventLog().indexOf("/org/foamy/Spotify 3 clicked") !== -1 },
+          "left-click on Spotify triggers Show Spotify")) break
+        test.check(test.eventLog().indexOf("/org/foamy/Spotify - activate") === -1 && !t.trayMenuOpen,
           "and neither sends Activate nor opens the menu")
         test.finish()
         break
       }
-    }
+      if (!test.waiting && !test.finished) driver.restart()
   }
   function nextOrientation() {
     Commons.Color.shellValues = {}
@@ -390,6 +407,7 @@ ShellRoot {
     stage = 30
   }
   function finish() {
+    finished = true
     console.log("FOAMY RESULT " + checks + " checks on 4.5")
     console.log("FOAMY DONE")
     Qt.quit()
