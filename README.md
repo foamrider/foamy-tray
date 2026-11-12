@@ -76,7 +76,11 @@ icon, not what a click does.
 ## Development
 
 ```sh
-./test.sh                 # all of the below except validate
+mise install              # the pinned linters and formatters (once)
+tests/validate.sh         # linters, formatters, kit checks, then tests/suite.sh
+tests/validate.sh --ci    # what CI runs: no Quickshell, no Omarchy host
+tests/suite.sh [--fast]   # the tests alone; --fast skips the runtime test
+./test.sh                 # node, kit-check and runtime tests
 node tests/tray-model.test.js
 node tests/i18n.test.js
 bash tests/kit-check.sh
