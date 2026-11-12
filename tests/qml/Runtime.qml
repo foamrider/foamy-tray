@@ -332,7 +332,9 @@ ShellRoot {
         m.moveRequested(1, 0)
         break
       case 35:
-        test.check(t.submenuDepth === 1 && m.title === "Stations" && m.entries.length === 2, "Right opens the submenu")
+        // The submenu's entries come from the app over D-Bus.
+        if (!test.settle(function() { return t.submenuDepth === 1 && m.title === "Stations" && m.entries.length === 2 },
+          "Right opens the submenu")) break
         test.check(m.cursor.index === 1, "a submenu opened from the keyboard lights its first entry")
         test.check(m.entries[1].checkState === Qt.Checked && m.entries[0].buttonType === QsMenuButtonType.RadioButton,
           "radio entries keep their check state")
@@ -357,6 +359,9 @@ ShellRoot {
         test.check(t.activeTrayItem === t.trayItems[test.first], "Shift-Tab goes back to the previous app's menu")
         break
       case 39:
+        // The first app's entries load again over D-Bus after the switch.
+        if (!test.settle(function() { return m.entries.length === 5 && m.entryAt(0).text === "Open window" },
+          "Shift-Tab shows the previous app's entries again")) break
         m.moveRequested(0, 1)
         m.activateRequested()
         break
