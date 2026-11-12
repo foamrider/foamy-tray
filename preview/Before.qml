@@ -25,24 +25,46 @@ Item {
   readonly property int hoverRow: previewState === "cursor" ? 3 : (previewState === "submenu" ? 0 : -1)
 
   function entry(text, extra) {
-    var e = { text: text, icon: "", isSeparator: false, enabled: true, hasChildren: false, checkable: false, checked: false }
-    for (var key in extra || {}) e[key] = extra[key]
+    var e = {
+      text: text,
+      icon: "",
+      isSeparator: false,
+      enabled: true,
+      hasChildren: false,
+      checkable: false,
+      checked: false
+    }
+    for (var key in extra || {})
+      e[key] = extra[key]
     return e
   }
-  readonly property var separator: entry("", { isSeparator: true })
-  readonly property var rootEntries: [
-    entry("Steam", { hasChildren: true }), separator,
-    entry("Store"), entry("Library"), entry("Community"), separator,
-    entry("Recent games", { hasChildren: true }), entry("Friends", { hasChildren: true }), separator,
-    entry("Offline mode", { enabled: false }), entry("Exit Steam")
-  ]
-  readonly property var subEntries: [
-    entry("Online", { checkable: true, checked: true }), entry("Away", { checkable: true }),
-    entry("Invisible", { checkable: true }), separator, entry("Show friends list")
-  ]
+  readonly property var separator: entry("", {
+    isSeparator: true
+  })
+  readonly property var rootEntries: [entry("Steam", {
+      hasChildren: true
+    }), separator, entry("Store"), entry("Library"), entry("Community"), separator, entry("Recent games", {
+      hasChildren: true
+    }), entry("Friends", {
+      hasChildren: true
+    }), separator, entry("Offline mode", {
+      enabled: false
+    }), entry("Exit Steam")]
+  readonly property var subEntries: [entry("Online", {
+      checkable: true,
+      checked: true
+    }), entry("Away", {
+      checkable: true
+    }), entry("Invisible", {
+      checkable: true
+    }), separator, entry("Show friends list")]
   readonly property var longEntries: {
     var list = []
-    for (var i = 1; i <= 40; i++) list.push(entry("Station " + i, { checkable: true, checked: i === 3 }))
+    for (var i = 1; i <= 40; i++)
+      list.push(entry("Station " + i, {
+        checkable: true,
+        checked: i === 3
+      }))
     return list
   }
   readonly property var entries: previewState === "submenu" ? subEntries : previewState === "long" ? longEntries : rootEntries
@@ -93,9 +115,12 @@ Item {
           width: parent.width
           implicitHeight: Style.space(11)
           Rectangle {
-            x: Style.space(10); width: parent.width - Style.space(20); height: 1
+            x: Style.space(10)
+            width: parent.width - Style.space(20)
+            height: 1
             anchors.verticalCenter: parent.verticalCenter
-            color: Commons.Color.popups.border; opacity: 0.45
+            color: Commons.Color.popups.border
+            opacity: 0.45
           }
         }
       }
@@ -113,17 +138,19 @@ Item {
               id: row
               required property var modelData
               required property int index
-              readonly property bool hiddenRow: !preview.submenu && ((index === 0 && modelData.hasChildren && modelData.text === "Steam")
-                || (modelData.isSeparator && index <= 1))
+              readonly property bool hiddenRow: !preview.submenu && ((index === 0 && modelData.hasChildren && modelData.text === "Steam") || (modelData.isSeparator && index <= 1))
               visible: !hiddenRow
               width: rows.width
               implicitHeight: hiddenRow ? 0 : (modelData.isSeparator ? Style.space(11) : Style.space(30))
               opacity: modelData.enabled ? 1.0 : 0.45
               Rectangle {
                 visible: row.modelData.isSeparator
-                x: Style.space(10); width: parent.width - Style.space(20); height: 1
+                x: Style.space(10)
+                width: parent.width - Style.space(20)
+                height: 1
                 anchors.verticalCenter: parent.verticalCenter
-                color: Commons.Color.popups.border; opacity: 0.45
+                color: Commons.Color.popups.border
+                opacity: 0.45
               }
               Rectangle {
                 visible: !row.modelData.isSeparator

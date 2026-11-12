@@ -38,10 +38,10 @@ PanelKeyCatcher {
   readonly property alias flick: flick
   property bool keyboardLevelChange: false
 
-  signal back()
+  signal back
   signal enter(var entry, string title)
   signal trigger(var entry)
-  signal dismiss()
+  signal dismiss
   signal switchMenu(int direction)
 
   implicitWidth: FoamyStyle.menuWidth
@@ -58,17 +58,25 @@ PanelKeyCatcher {
   }
 
   function entryAt(stop) {
-    if (stop < backStops || stop >= cursor.count) return null
+    if (stop < backStops || stop >= cursor.count)
+      return null
     return entries[stops[stop - backStops]] || null
   }
 
   function activate(stop) {
-    if (stop < 0) return
-    if (stop < backStops) { goBack(); return }
+    if (stop < 0)
+      return
+    if (stop < backStops) {
+      goBack()
+      return
+    }
     var entry = entryAt(stop)
-    if (!entry) return
-    if (entry.hasChildren) goInto(entry)
-    else trigger(entry)
+    if (!entry)
+      return
+    if (entry.hasChildren)
+      goInto(entry)
+    else
+      trigger(entry)
   }
 
   // Reset the scroll before the model swap: the swap destroys the row
@@ -79,7 +87,8 @@ PanelKeyCatcher {
   }
 
   function goBack() {
-    if (atRoot) return
+    if (atRoot)
+      return
     wheel.scrollTo(0, false)
     back()
   }
@@ -93,15 +102,18 @@ PanelKeyCatcher {
   // Keep the keyboard cursor's row inside the scrolled list.
   function reveal() {
     var entry = cursor.index - backStops
-    if (entry < 0 || entry >= stops.length) return
+    if (entry < 0 || entry >= stops.length)
+      return
     var row = rows.itemAt(stops[entry])
-    if (!row) return
-    if (row.y < flick.contentY) flick.contentY = row.y
+    if (!row)
+      return
+    if (row.y < flick.contentY)
+      flick.contentY = row.y
     else if (row.y + row.height > flick.contentY + flick.height)
       flick.contentY = Math.min(flick.contentHeight - flick.height, row.y + row.height - flick.height)
   }
 
-  onMoveRequested: function(dx, dy) {
+  onMoveRequested: function (dx, dy) {
     if (dy !== 0) {
       cursor.move(dy)
       reveal()
@@ -110,8 +122,10 @@ PanelKeyCatcher {
     keyboardLevelChange = true
     if (dx > 0) {
       var entry = entryAt(cursor.index)
-      if (entry && entry.hasChildren) goInto(entry)
-      else keyboardLevelChange = false
+      if (entry && entry.hasChildren)
+        goInto(entry)
+      else
+        keyboardLevelChange = false
     } else if (!atRoot) {
       goBack()
     } else {
@@ -123,17 +137,24 @@ PanelKeyCatcher {
     activate(cursor.index)
   }
   onCloseRequested: {
-    if (atRoot) { dismiss(); return }
+    if (atRoot) {
+      dismiss()
+      return
+    }
     keyboardLevelChange = true
     goBack()
   }
-  onTabRequested: function(direction) { menu.switchMenu(direction) }
+  onTabRequested: function (direction) {
+    menu.switchMenu(direction)
+  }
 
   // A level reached from the keyboard starts with its first entry lit; one
   // reached by pointer waits for the pointer, as on open.
-  onDepthChanged: Qt.callLater(function() {
-    if (menu.keyboardLevelChange && cursor.count > menu.backStops) cursor.index = menu.backStops
-    else cursor.reset()
+  onDepthChanged: Qt.callLater(function () {
+    if (menu.keyboardLevelChange && cursor.count > menu.backStops)
+      cursor.index = menu.backStops
+    else
+      cursor.reset()
     menu.keyboardLevelChange = false
   })
 
@@ -153,7 +174,8 @@ PanelKeyCatcher {
       foreground: FoamyPalette.text
       hasCursor: cursor.at(0) && !menu.atRoot
       onHovered: cursor.hover(0)
-      onClicked: if (!menu.pointerSettling) menu.goBack()
+      onClicked: if (!menu.pointerSettling)
+        menu.goBack()
       Accessible.role: Accessible.Button
       Accessible.name: FoamyI18n.t("Back")
       Accessible.description: menu.title
@@ -202,7 +224,10 @@ PanelKeyCatcher {
   }
 
   // A wheel notch scrolls about three rows, however the mouse splits it.
-  FoamyWheelScroll { id: wheel; target: flick }
+  FoamyWheelScroll {
+    id: wheel
+    target: flick
+  }
 
   Flickable {
     id: flick
@@ -216,7 +241,9 @@ PanelKeyCatcher {
     flickableDirection: Flickable.VerticalFlick
     interactive: contentHeight > height
 
-    ScrollBar.vertical: ScrollBar { policy: ScrollBar.AsNeeded }
+    ScrollBar.vertical: ScrollBar {
+      policy: ScrollBar.AsNeeded
+    }
 
     Column {
       id: list
@@ -237,8 +264,7 @@ PanelKeyCatcher {
           readonly property bool rowEnabled: modelData.enabled !== false
           readonly property int stop: menu.stopFor(index)
           readonly property string label: TrayModel.menuLabel(modelData.text)
-          readonly property bool checkable: !separator && modelData.buttonType !== undefined
-            && modelData.buttonType !== QsMenuButtonType.None
+          readonly property bool checkable: !separator && modelData.buttonType !== undefined && modelData.buttonType !== QsMenuButtonType.None
           readonly property bool checked: modelData.checkState === Qt.Checked
 
           visible: !hiddenRow
@@ -269,8 +295,10 @@ PanelKeyCatcher {
             hasCursor: row.stop >= 0 && cursor.at(row.stop)
             // Separators and disabled entries don't react to the pointer.
             cursorShape: row.stop >= 0 ? Qt.PointingHandCursor : Qt.ArrowCursor
-            onHovered: if (row.stop >= 0) cursor.hover(row.stop)
-            onClicked: if (row.stop >= 0 && !menu.pointerSettling) menu.activate(row.stop)
+            onHovered: if (row.stop >= 0)
+              cursor.hover(row.stop)
+            onClicked: if (row.stop >= 0 && !menu.pointerSettling)
+              menu.activate(row.stop)
 
             FoamyIcon {
               visible: row.checkable && row.checked
