@@ -145,7 +145,9 @@ def run_host(host_name, shots, theme, plugin, shell_path=PLUGIN / "tests/qml/Run
     run.start()
     try:
         bus = run.env["DBUS_SESSION_BUS_ADDRESS"]
-        if not bus.startswith(f"unix:path={run.base}/bus"):
+        # The harness keeps the private bus socket in the run's short socket
+        # directory; without dbus-daemon the address is a dead one in run.base.
+        if not bus.startswith(f"unix:path={run.sockets}/"):
             raise SystemExit("foamy-kit harness did not start a private D-Bus session")
         fixture = subprocess.Popen(
             [sys.executable, "-I", str(PLUGIN / "tests/status_notifier.py"), str(status), str(events)],
