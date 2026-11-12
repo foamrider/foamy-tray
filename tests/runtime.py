@@ -20,6 +20,7 @@ FOAMY_TRAY_KEEP=1 keeps the run directory (log, events) after a pass.
 --shots DIR writes composed 1920x1080 screens (wallpaper, bar, open menu
 where the card's anchor puts it) and tight menu cards for the PR.
 """
+
 import argparse
 import os
 from pathlib import Path
@@ -88,6 +89,7 @@ def compose(shots, line, theme):
     """FOAMY SHOT <name> <bar.png> <card.png|-> <x> <y> <barX> <barY>: a
     1920x1080 screen with the bar window and the card at its anchor rect."""
     from PIL import Image, ImageDraw
+
     name, bar_path, card_path, x, y, bar_x, bar_y = line.split()
     x, y, bar_x, bar_y = int(x), int(y), int(bar_x), int(bar_y)
     screen = Image.new("RGBA", (1920, 1080))
@@ -95,7 +97,9 @@ def compose(shots, line, theme):
     draw = ImageDraw.Draw(screen)
     for row in range(1080):
         t = row / 1079
-        draw.line([(0, row), (1919, row)], fill=tuple(int(a + (b - a) * t) for a, b in zip(top, bottom, strict=True)) + (255,))
+        draw.line(
+            [(0, row), (1919, row)], fill=tuple(int(a + (b - a) * t) for a, b in zip(top, bottom, strict=True)) + (255,)
+        )
     bar = Image.open(bar_path).convert("RGBA")
     screen.alpha_composite(bar, (max(0, bar_x), max(0, bar_y)))
     if card_path != "-":
@@ -109,6 +113,7 @@ def compose(shots, line, theme):
 def run_host(host_name, shots, theme, plugin, shell_path=PLUGIN / "tests/qml/Runtime.qml"):
     sys.path.insert(0, str(KIT / "preview"))
     import harness
+
     shell = Path(shell_path).read_text()
     run = harness.Run(
         host_name,
@@ -125,11 +130,13 @@ def run_host(host_name, shots, theme, plugin, shell_path=PLUGIN / "tests/qml/Run
     events.write_text("")
     raw = run.base / "raw-shots"
     raw.mkdir()
-    run.env.update({
-        "FOAMY_TRAY_STATUS": str(status),
-        "FOAMY_TRAY_EVENTS": str(events),
-        "FOAMY_TRAY_THEME": theme,
-    })
+    run.env.update(
+        {
+            "FOAMY_TRAY_STATUS": str(status),
+            "FOAMY_TRAY_EVENTS": str(events),
+            "FOAMY_TRAY_THEME": theme,
+        }
+    )
     if shots:
         run.env["FOAMY_TRAY_SHOTS"] = str(raw)
     # start() brings up the harness's private bus (and qs on it); the fixture
@@ -140,8 +147,11 @@ def run_host(host_name, shots, theme, plugin, shell_path=PLUGIN / "tests/qml/Run
         bus = run.env["DBUS_SESSION_BUS_ADDRESS"]
         if not bus.startswith(f"unix:path={run.base}/bus"):
             raise SystemExit("foamy-kit harness did not start a private D-Bus session")
-        fixture = subprocess.Popen([sys.executable, "-I", str(PLUGIN / "tests/status_notifier.py"), str(status), str(events)],
-                                   env=dict(run.env, FOAMY_TRAY_PRIVATE_BUS=bus), start_new_session=True)
+        fixture = subprocess.Popen(
+            [sys.executable, "-I", str(PLUGIN / "tests/status_notifier.py"), str(status), str(events)],
+            env=dict(run.env, FOAMY_TRAY_PRIVATE_BUS=bus),
+            start_new_session=True,
+        )
         run.wait(timeout=120)
     finally:
         run.stop()
@@ -149,9 +159,15 @@ def run_host(host_name, shots, theme, plugin, shell_path=PLUGIN / "tests/qml/Run
             os.killpg(fixture.pid, signal.SIGTERM)
             fixture.wait(timeout=5)
     host_commands = run.host_commands()
-    run.ok = "FOAMY DONE" in run.log and "FOAMY FAIL" not in run.log \
-        and not any(marker in run.log for marker in harness.FAILURE_MARKERS + TRAY_ERRORS) and not host_commands
-    result = next((line.split("FOAMY RESULT ", 1)[1] for line in run.log.splitlines() if "FOAMY RESULT" in line), "no result")
+    run.ok = (
+        "FOAMY DONE" in run.log
+        and "FOAMY FAIL" not in run.log
+        and not any(marker in run.log for marker in harness.FAILURE_MARKERS + TRAY_ERRORS)
+        and not host_commands
+    )
+    result = next(
+        (line.split("FOAMY RESULT ", 1)[1] for line in run.log.splitlines() if "FOAMY RESULT" in line), "no result"
+    )
     ok = run.ok
     print(f"{'PASS' if ok else 'FAIL'} runtime {host_name} ({theme}): {result}")
     if not ok:
@@ -181,8 +197,11 @@ def main():
     parser.add_argument("--shots")
     parser.add_argument("--theme", default="dark", choices=["dark", "light"])
     parser.add_argument("--plugin", default=str(PLUGIN), help="plugin directory to load (default: this checkout)")
-    parser.add_argument("--shell", default=str(PLUGIN / "tests/qml/Runtime.qml"),
-                        help="test QML to run (default tests/qml/Runtime.qml), e.g. a capture script for an older checkout")
+    parser.add_argument(
+        "--shell",
+        default=str(PLUGIN / "tests/qml/Runtime.qml"),
+        help="test QML to run (default tests/qml/Runtime.qml), e.g. a capture script for an older checkout",
+    )
     args = parser.parse_args()
     if args.shots:
         # Composing runs after the test; fail before it rather than with a
