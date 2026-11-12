@@ -5,6 +5,7 @@
 const assert = require("node:assert/strict")
 const path = require("node:path")
 const Model = require(path.join(__dirname, "..", "TrayModel.js"))
+const Text = require(path.join(__dirname, "..", "kit", "node-loader.cjs")).load("FoamyText")
 
 let passed = 0
 function test(name, body) {
@@ -162,11 +163,9 @@ test("the glyphs setting replaces an app's icon", () => {
   assert.ok(Model.windowApp(spotify))
 })
 
-test("tooltips are the app's text, bounded before the host sizes its popup", () => {
-  const LINES = Model.TOOLTIP_LINES
-  const CHARS = Model.TOOLTIP_LINE_CHARS
-  // Ordinary tooltips pass through unchanged, markup included (the host
-  // draws plain text).
+test("tooltips are the app's text, capped by FoamyText before the host sizes its popup", () => {
+  // The app's tooltip title, else its Title, else its Id; markup passes
+  // through (the host draws plain text).
   assert.equal(Model.tooltipText(spotify), "Warpaint – Love Is To Die")
   assert.equal(Model.tooltipText(steam), "Steam")
   assert.equal(Model.tooltipText({ id: "nextcloud" }), "nextcloud")
@@ -174,26 +173,13 @@ test("tooltips are the app's text, bounded before the host sizes its popup", () 
   assert.equal(Model.tooltipText({ tooltipTitle: "<b>x</b>" }), "<b>x</b>")
   assert.equal(Model.tooltipText(null), "")
   assert.equal(Model.tooltipText({}), "")
-  const exact = Array(LINES).fill("a".repeat(CHARS)).join("\n")
-  assert.equal(Model.tooltipText({ tooltipTitle: exact }), exact)
-  // A long line is cut, and the cut shows.
-  assert.equal(Model.tooltipText({ tooltipTitle: "b".repeat(CHARS + 1) }), "b".repeat(CHARS) + "…")
-  // Too many lines: the first ones are kept, the last kept one marked.
-  const tall = Model.tooltipText({ tooltipTitle: "line\n".repeat(LINES * 4) }).split("\n")
-  assert.equal(tall.length, LINES)
-  assert.equal(tall[LINES - 1], "line…")
-  assert.ok(tall.slice(0, -1).every(line => line === "line"))
-  // \r\n and \r count as one line break each.
-  assert.equal(Model.tooltipText({ tooltipTitle: "a\r\nb\rc" }), "a\nb\nc")
-  // The reproduced case: 20,000 characters plus 60 lines.
-  const huge = Model.tooltipText({ tooltipTitle: "A".repeat(20000) + "\nline".repeat(60) })
-  assert.equal(huge, "A".repeat(CHARS) + "…")
-  // A cut never splits a surrogate pair.
-  const emoji = Model.tooltipText({ tooltipTitle: "x".repeat(CHARS - 1) + "\u{1f600}" })
-  assert.equal(emoji, "x".repeat(CHARS - 1) + "…")
-  // A multi-megabyte title is cut from its start, not scanned whole.
-  const big = Model.tooltipText({ tooltipTitle: "z\n".repeat(4 * 1024 * 1024) })
-  assert.equal(big.split("\n").length, LINES)
+  // What Tray.qml shows for the reproduced title, 20,000 characters plus 60
+  // lines: TOOLTIP_LINES lines, the long one cut, and the cut shows at the
+  // end (the kit's tests cover the cap itself).
+  const tip = Text.tooltip(Model.tooltipText({ tooltipTitle: "A".repeat(20000) + "\nline".repeat(60) }))
+  assert.deepEqual(tip.split("\n"), ["A".repeat(Text.TOOLTIP_CHARS - 1) + "…"]
+    .concat(Array(Text.TOOLTIP_LINES - 2).fill("line"), ["line…"]))
+  assert.equal(Text.tooltip(Model.tooltipText(spotify)), "Warpaint – Love Is To Die")
 })
 
 test("menu labels stay on one line", () => {

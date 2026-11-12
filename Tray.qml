@@ -9,6 +9,7 @@ import qs.Commons as Commons
 import qs.Ui
 import "kit"
 import "TrayModel.js" as TrayModel
+import "kit/FoamyText.js" as FoamyText
 
 BarWidget {
   id: root
@@ -228,7 +229,7 @@ BarWidget {
 
   // Bounded: the host sizes its tooltip popup to the app's text.
   function trayTooltip(item) {
-    return TrayModel.tooltipText(item)
+    return FoamyText.tooltip(TrayModel.tooltipText(item))
   }
 
   // The 4.5 host only creates section delegates while their parent is visible.

@@ -9,6 +9,7 @@ import "hostbar" as Host
 import "plugin" as Foamy
 import "plugin/kit"
 import "plugin/TrayModel.js" as TrayModel
+import "plugin/kit/FoamyText.js" as FoamyText
 
 // Offscreen integration test, run by tests/runtime.py: the host's real
 // Bar.qml (Omarchy 4.5) hosts Foamy Tray, and three synthetic apps on a
@@ -276,9 +277,15 @@ ShellRoot {
         // The host sizes its tooltip popup to the text: the second app's
         // 20,000-character title would make it about 160,000 px wide.
         var tip = t.trayTooltip(t.trayItems[test.second])
-        tooltipMetrics.text = tip
-        test.check(tip.indexOf("<b>Second</b> AAA") === 0 && tip.length <= TrayModel.TOOLTIP_LINE_CHARS + 1
-          && tooltipMetrics.width < 1920, "an oversized app tooltip is bounded: " + tip.length + " chars, " + tooltipMetrics.width + " px")
+        var tipLines = tip.split("\n")
+        var widest = 0
+        for (var i = 0; i < tipLines.length; i++) {
+          tooltipMetrics.text = tipLines[i]
+          widest = Math.max(widest, tooltipMetrics.width)
+        }
+        test.check(tip.indexOf("<b>Second</b> AAA") === 0 && tipLines.length <= FoamyText.TOOLTIP_LINES
+          && tipLines.every(function(line) { return line.length <= FoamyText.TOOLTIP_CHARS }) && widest < 1920,
+          "an oversized app tooltip is bounded: " + tipLines.length + " lines, " + tip.length + " chars, " + widest + " px")
         test.check(TrayModel.replacementGlyph({ id: "steam" }) === String.fromCharCode(0xf1b6)
           && TrayModel.replacementGlyph({ id: "remmina-icon" }) === String.fromCharCode(0xeb3a),
           "escaped Nerd Font glyphs survive in the QML engine")
