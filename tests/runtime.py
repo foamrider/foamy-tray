@@ -2,11 +2,10 @@
 """Offscreen integration test of Foamy Tray in the host's real bar, on
 Omarchy 4.5 (QML only).
 
-  tests/runtime.py [--host 4.5|4.0|both] [--shots DIR] [--theme dark|light] [--plugin DIR] [--shell QML]
+  tests/runtime.py [--shots DIR] [--theme dark|light] [--plugin DIR] [--shell QML]
 
-4.5 (the default) is the installed /usr/share/omarchy/shell, or the tree in
-FOAMY_HOST_45. 4.0 runs only against an Omarchy 4.0 shell tree in
-FOAMY_HOST_40; without one, --host 4.0 and --host both print a SKIP line for it.
+The host is the installed /usr/share/omarchy/shell (4.5), or the tree in
+FOAMY_HOST_45.
 
 Uses the foamy-kit harness (FOAMY_KIT, default ~/GitHub/Personal/foamy-kit):
 temp HOME/XDG/runtime dirs, offscreen Qt, no Wayland/Hyprland variables. The
@@ -169,7 +168,6 @@ def run_host(host_name, shots, theme, plugin, shell_path=PLUGIN / "tests/qml/Run
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument("--host", default="4.5", choices=["4.5", "4.0", "both"])
     parser.add_argument("--shots")
     parser.add_argument("--theme", default="dark", choices=["dark", "light"])
     parser.add_argument("--plugin", default=str(PLUGIN), help="plugin directory to load (default: this checkout)")
@@ -187,12 +185,8 @@ def main():
     if not (KIT / "preview/harness.py").exists():
         print(f"SKIP: foamy-kit harness not found at {KIT} (set FOAMY_KIT)")
         return 0
-    hosts = ["4.5", "4.0"] if args.host == "both" else [args.host]
-    if "4.0" in hosts and not os.environ.get("FOAMY_HOST_40"):
-        print("SKIP runtime 4.0: set FOAMY_HOST_40 to an Omarchy 4.0 shell tree")
-        hosts.remove("4.0")
-    results = [run_host(host, args.shots, args.theme, Path(args.plugin).resolve(), args.shell) for host in hosts]
-    return 0 if all(results) else 1
+    ok = run_host("4.5", args.shots, args.theme, Path(args.plugin).resolve(), args.shell)
+    return 0 if ok else 1
 
 
 if __name__ == "__main__":

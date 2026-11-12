@@ -23,9 +23,6 @@ BarWidget {
   // The open menu's card and its body (TrayMenu, built on first open).
   readonly property alias menuPopup: trayMenuPopup
   readonly property Item trayMenu: trayMenuPopup.bodyItem
-  // The custom bar's reorder surface is above this widget's MouseAreas and
-  // therefore owns the visible cursor while preserving the tray's own clicks.
-  readonly property int barCursorShape: Qt.PointingHandCursor
   readonly property color foreground: bar ? bar.foreground : Commons.Color.foreground
   readonly property string fontFamily: bar ? bar.fontFamily : Style.font.family
   // Passive items opt out through the status notifier protocol. No app is filtered by name.
@@ -34,12 +31,12 @@ BarWidget {
   })
   readonly property int trayItemExtent: Style.bar.iconSlot
 
-  // The 4.5 bar parents its tray-section widgets here. Keep them alongside the
-  // app icons, with no drawer; older hosts simply leave this area empty.
+  // The bar parents its tray-section widgets here. Keep them alongside the
+  // app icons, with no drawer.
   readonly property Item sectionHost: sectionArea
-  readonly property string sectionEdge: "fixedEdge" in root && root.fixedEdge === "start" ? "start" : "end"
+  readonly property string sectionEdge: root.fixedEdge === "start" ? "start" : "end"
   readonly property bool sectionAtStart: sectionEdge === "end"
-  readonly property bool sectionDragActive: !!bar && "traySectionDragActive" in bar && bar.traySectionDragActive === true
+  readonly property bool sectionDragActive: !!bar && bar.traySectionDragActive === true
   readonly property int sectionCount: bar && bar.layoutConfig && Array.isArray(bar.layoutConfig.tray)
     ? bar.layoutConfig.tray.length : 0
   readonly property real sectionExtent: root.vertical ? sectionArea.height : sectionArea.width

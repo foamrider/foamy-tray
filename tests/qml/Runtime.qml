@@ -10,8 +10,8 @@ import "plugin/kit"
 import "plugin/TrayModel.js" as TrayModel
 
 // Offscreen integration test, run by tests/runtime.py: the host's real
-// Bar.qml (4.5, or 4.0 from FOAMY_HOST_40) hosts Foamy Tray, and three synthetic apps on a
-// private D-Bus session supply tray items and DBusMenus. Covers the 4.5
+// Bar.qml (Omarchy 4.5) hosts Foamy Tray, and three synthetic apps on a
+// private D-Bus session supply tray items and DBusMenus. Covers the
 // tray-section hooks (sectionHost, sectionEdge, sectionShown, tray layout,
 // drag drop target), passive items, the open-panel mark, and the menu's
 // keyboard cursor, submenus, Esc, Tab between app menus and activation.
@@ -27,7 +27,6 @@ ShellRoot {
   property int first: 0
   property int second: 1
   property int spotify: -1
-  readonly property bool v45: !!bar && "traySectionDragActive" in bar
   readonly property string shots: Quickshell.env("FOAMY_TRAY_SHOTS") || ""
   readonly property string theme: Quickshell.env("FOAMY_TRAY_THEME") || "dark"
 
@@ -176,12 +175,6 @@ ShellRoot {
       case 0:
         test.check(!!t, "real host loads the tray")
         test.check(t.trayItems.length === 0, "private bus starts without active app icons")
-        if (!test.v45) {
-          test.check(!t.visible && t.sectionExtent === 0, "old host leaves empty tray collapsed")
-          status.setText("Active\n")
-          test.stage = 15
-          break
-        }
         test.check(!!test.widget() && t.visible && t.sectionExtent === 120, "tray section renders with no app icons")
         test.check(test.widget().settings.label === "Hosted widget", "host injects section widget settings")
         test.check(test.inside(test.widget(), t.sectionHost), "host draws section widgets inside sectionHost")
@@ -250,17 +243,8 @@ ShellRoot {
         bar.beginBarDrag(test.slotFor("test.widget"), 5, 5)
         test.stage = 7
         break
-      case 15:
-        test.check(t.trayItems.length === 1 && t.visible && t.sectionExtent === 0, "old host shows ordinary app icon")
-        test.check((t.vertical ? t.implicitHeight : t.implicitWidth) === t.trayItemExtent, "old host keeps app icon dimensions")
-        status.setText("Passive\n")
-        break
-      case 16:
-        test.check(!t.visible, "passive icon is excluded")
-        test.nextOrientation()
-        break
 
-      // --- menus (top bar, both hosts) ---------------------------------------------------------------
+      // --- menus (top bar) ---------------------------------------------------------------
       case 30:
         if (test.theme === "light") Commons.Color.shellValues = test.lightTheme
         // Screenshots use Hyprland's common 6 px rounding (foamy doubles it).
@@ -306,11 +290,9 @@ ShellRoot {
           && labels[0].text === "Offline mode second line third line",
           "a multi-line app label stays on its row: " + labels.map(function(l) { return l.lineCount + " lines, " + l.height + " px" }))
         test.check(t.openPanelIndicatorItem === t.trayAnchor(test.first), "open-panel mark targets the clicked icon")
-        if (test.v45) {
-          var slot = test.slotFor("foamy.tray")
-          test.check(slot.panelIndicatorItem === t.trayAnchor(test.first), "4.5 bar reads openPanelIndicatorItem")
-          test.markCenter = slot.panelIndicatorCenter
-        }
+        var slot = test.slotFor("foamy.tray")
+        test.check(slot.panelIndicatorItem === t.trayAnchor(test.first), "the bar reads openPanelIndicatorItem")
+        test.markCenter = slot.panelIndicatorCenter
         test.check(t.menuPopup.cardItem && t.menuPopup.cardItem.radius === Style.cornerRadius * 2, "card uses the foamy radius")
         test.check(t.menuPopup.borderSpec && Border.uniformWidth(t.menuPopup.borderSpec) === 1, "card uses the foamy 1px border")
         test.check(t.menuPopup.padding === Style.space(8), "card uses the kit's 8 px menu padding")
@@ -342,8 +324,8 @@ ShellRoot {
           "the next menu starts at its top, unlit")) break
         test.check(t.activeTrayItem === t.trayItems[test.second] && t.openPanelIndicatorItem === t.trayAnchor(test.second),
           "Tab opens the next app's menu")
-        if (test.v45) test.check(Math.abs(Math.abs(test.slotFor("foamy.tray").panelIndicatorCenter - test.markCenter) - t.trayItemExtent) < 1,
-          "4.5 mark moves under the icon whose menu is open")
+        test.check(Math.abs(Math.abs(test.slotFor("foamy.tray").panelIndicatorCenter - test.markCenter) - t.trayItemExtent) < 1,
+          "the mark moves under the icon whose menu is open")
         test.shot("tab")
         break
       case 38:
@@ -408,7 +390,7 @@ ShellRoot {
     stage = 30
   }
   function finish() {
-    console.log("FOAMY RESULT " + checks + " checks on " + (v45 ? "4.5" : "4.0"))
+    console.log("FOAMY RESULT " + checks + " checks on 4.5")
     console.log("FOAMY DONE")
     Qt.quit()
   }

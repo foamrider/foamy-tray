@@ -79,7 +79,7 @@ icon, not what a click does.
 node tests/tray-model.test.js
 node tests/i18n.test.js
 bash tests/kit-check.sh
-python3 -I tests/runtime.py [--host 4.5|4.0|both] [--shots DIR]
+python3 -I tests/runtime.py [--shots DIR] [--theme light]
 omarchy plugin validate .
 ```
 
@@ -92,9 +92,7 @@ menus, so the desktop's own tray is never seen or touched, and no host script
 runs. It checks the 4.5 tray-section hooks in all four bar positions, the
 menu's keyboard model, and app data the tray must bound: an oversized
 tooltip, a multi-line menu label, and an app whose icon goes away while
-its menu is open. `--shots DIR` saves screenshots. `--host 4.0` and
-`--host both` run 4.0 only against an Omarchy 4.0 shell tree in
-`FOAMY_HOST_40`, and print a SKIP line without one.
+its menu is open. `--shots DIR` saves screenshots.
 
 Test dependencies: `node`, `python`, `python-dbus`, `python-gobject`,
 `python-pillow` (screenshots only), `dbus` (`dbus-daemon`), `quickshell`,
@@ -102,7 +100,7 @@ and a [foamy-kit](https://github.com/foamrider/foamy-kit) checkout at
 `~/GitHub/Personal/foamy-kit` (or `FOAMY_KIT`, 0.2.0 or later) for the offscreen harness. Its
 `preview/render.py` renders the mock menus in `preview/Preview.qml`;
 `preview.png` is the top right of `menu-cursor-screen.png` from
-`tests/runtime.py --host 4.5 --shots DIR`.
+`tests/runtime.py --shots DIR`.
 
 Shared parts (popup card, cursor, tokens, icons, translations) come from
 foamy-kit as stamped copies in `kit/`. Don't edit them here: change foamy-kit

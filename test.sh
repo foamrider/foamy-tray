@@ -2,7 +2,7 @@
 # Every Foamy Tray test. Safe to run anywhere: the runtime test is offscreen,
 # in temporary HOME/XDG directories and its own private D-Bus session, so it
 # never touches the desktop, its bar or its tray. Extra arguments go to
-# tests/runtime.py (e.g. --host 4.5, --shots DIR).
+# tests/runtime.py (e.g. --theme light, --shots DIR).
 set -euo pipefail
 cd -- "$(dirname -- "${BASH_SOURCE[0]}")"
 node tests/tray-model.test.js
