@@ -1,0 +1,3 @@
+# Paths tests/validate.sh does not check, each with its reason.
+tests/qml/*  qmllint  # harness scenes: their imports ("harness", "hostbar", "plugin") exist only in the harness's staged copy
+preview/Before.qml  qmllint  # render.py --trio loads it beside an old (1.0.0) checkout as "..": Dev.TrayPopup exists only there

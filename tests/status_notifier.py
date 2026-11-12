@@ -1,4 +1,4 @@
-"""Two synthetic tray apps with DBusMenus, for tests/runtime.py.
+"""Synthetic tray apps for tests/runtime.py: three with DBusMenus, one without.
 
 Runs only on the private bus that tests/runtime.py gets from the foamy-kit
 harness; it refuses to start on any other bus.
@@ -7,9 +7,11 @@ harness; it refuses to start on any other bus.
 
 Line 1 of the status file is the first app's status (Passive/Active/
 NeedsAttention), line 2 the second app's, line 3 a Spotify-like app's that
-hides to the tray (Passive when missing). Menu clicks
-are appended to the events file as "<item path> <menu id> <event>".
+hides to the tray, line 4 an app without a DBusMenu (Passive when missing).
+Menu clicks are appended to the events file as "<item path> <menu id> <event>",
+item method calls as "<item path> - <method>".
 """
+
 import os
 import sys
 from pathlib import Path
@@ -37,6 +39,7 @@ class Menu(dbus.service.Object):
 
     def __init__(self, path, owner, tree):
         super().__init__(bus, path)
+        self.path = path
         self.owner = owner
         self.items = {}
         self.children = {}
@@ -60,7 +63,9 @@ class Menu(dbus.service.Object):
         children = []
         if depth != 0:
             for child in self.children.get(item_id, []):
-                children.append(dbus.Struct(self._layout(child, depth - 1, names), signature="ia{sv}av", variant_level=1))
+                children.append(
+                    dbus.Struct(self._layout(child, depth - 1, names), signature="ia{sv}av", variant_level=1)
+                )
         return (dbus.Int32(item_id), self._props(item_id, names), dbus.Array(children, signature="v"))
 
     @dbus.service.method(MENU, in_signature="iias", out_signature="u(ia{sv}av)")
@@ -70,8 +75,10 @@ class Menu(dbus.service.Object):
     @dbus.service.method(MENU, in_signature="aias", out_signature="a(ia{sv})")
     def GetGroupProperties(self, ids, names):
         ids = ids or list(self.items)
-        return dbus.Array([dbus.Struct((dbus.Int32(i), self._props(i, names)), signature="ia{sv}") for i in ids if i in self.items],
-                          signature="(ia{sv})")
+        return dbus.Array(
+            [dbus.Struct((dbus.Int32(i), self._props(i, names)), signature="ia{sv}") for i in ids if i in self.items],
+            signature="(ia{sv})",
+        )
 
     @dbus.service.method(MENU, in_signature="is", out_signature="v")
     def GetProperty(self, item_id, name):
@@ -98,8 +105,12 @@ class Menu(dbus.service.Object):
 
     @dbus.service.method(PROPS, in_signature="s", out_signature="a{sv}")
     def GetAll(self, interface):
-        return {"Version": dbus.UInt32(3), "TextDirection": "ltr", "Status": "normal",
-                "IconThemePath": dbus.Array([], signature="s")}
+        return {
+            "Version": dbus.UInt32(3),
+            "TextDirection": "ltr",
+            "Status": "normal",
+            "IconThemePath": dbus.Array([], signature="s"),
+        }
 
     @dbus.service.method(PROPS, in_signature="ss", out_signature="v")
     def Get(self, interface, key):
@@ -111,30 +122,54 @@ class Menu(dbus.service.Object):
 
 
 class Item(dbus.service.Object):
-    def __init__(self, path, item_id, title, line, menu_path):
+    def __init__(self, path, item_id, title, line, menu, tooltip=""):
         super().__init__(bus, path)
         self.path = path
         self.item_id = item_id
         self.title = title
+        self.tooltip = tooltip
         self.line = line
-        self.menu_path = menu_path
+        # The item's exported Menu, or None for an app without a DBusMenu.
+        self.menu_path = menu.path if menu else None
         self.status = "Passive"
         self.registered = False
 
     @dbus.service.method(PROPS, in_signature="s", out_signature="a{sv}")
     def GetAll(self, interface):
-        return {"Category": "ApplicationStatus", "Id": self.item_id, "Title": self.title,
-                "Status": self.status, "IconName": "", "IconPixmap": PIXMAP, "ItemIsMenu": False,
-                "Menu": dbus.ObjectPath(self.menu_path)}
+        props = {
+            "Category": "ApplicationStatus",
+            "Id": self.item_id,
+            "Title": self.title,
+            "Status": self.status,
+            "IconName": "",
+            "IconPixmap": PIXMAP,
+            "ItemIsMenu": False,
+            "ToolTip": dbus.Struct(("", dbus.Array([], signature="(iiay)"), self.tooltip, ""), signature="sa(iiay)ss"),
+        }
+        # An app without a DBusMenu has no Menu property.
+        if self.menu_path:
+            props["Menu"] = dbus.ObjectPath(self.menu_path)
+        return props
 
     @dbus.service.method(PROPS, in_signature="ss", out_signature="v")
     def Get(self, interface, key):
         return self.GetAll(interface)[key]
 
+    def record(self, method):
+        with events_file.open("a") as out:
+            out.write(f"{self.path} - {method}\n")
+
     @dbus.service.method(SNI, in_signature="ii", out_signature="")
     def Activate(self, x, y):
-        with events_file.open("a") as out:
-            out.write(f"{self.path} - activate\n")
+        self.record("activate")
+
+    @dbus.service.method(SNI, in_signature="ii", out_signature="")
+    def SecondaryActivate(self, x, y):
+        self.record("secondary-activate")
+
+    @dbus.service.method(SNI, in_signature="ii", out_signature="")
+    def ContextMenu(self, x, y):
+        self.record("context-menu")
 
     @dbus.service.signal(SNI, signature="s")
     def NewStatus(self, status):
@@ -156,29 +191,52 @@ class Item(dbus.service.Object):
         return True
 
 
-first_menu = Menu("/org/foamy/One/Menu", "/org/foamy/One", [
-    (1, {"label": "Open window"}, []),
-    (2, {"type": "separator"}, []),
-    (3, {"label": "Stations"}, [
-        (31, {"label": "Radio A", "toggle-type": "radio", "toggle-state": 0}, []),
-        (32, {"label": "Radio B", "toggle-type": "radio", "toggle-state": 1}, []),
-    ]),
-    (4, {"label": "Offline mode", "enabled": False}, []),
-    (5, {"label": "Quit"}, []),
-])
-second_menu = Menu("/org/foamy/Two/Menu", "/org/foamy/Two", [
-    (1, {"label": "Second action"}, []),
-])
+first_menu = Menu(
+    "/org/foamy/One/Menu",
+    "/org/foamy/One",
+    [
+        (1, {"label": "Open window"}, []),
+        (2, {"type": "separator"}, []),
+        (
+            3,
+            {"label": "Stations"},
+            [
+                (31, {"label": "Radio A", "toggle-type": "radio", "toggle-state": 0}, []),
+                (32, {"label": "Radio B", "toggle-type": "radio", "toggle-state": 1}, []),
+            ],
+        ),
+        # A label with line breaks: the row must still draw one line.
+        (4, {"label": "Offline mode\nsecond line\nthird line", "enabled": False}, []),
+        (5, {"label": "Quit"}, []),
+    ],
+)
+second_menu = Menu(
+    "/org/foamy/Two/Menu",
+    "/org/foamy/Two",
+    [
+        (1, {"label": "Second action"}, []),
+    ],
+)
 # Spotify's real menu layout (busctl, read-only).
-spotify_menu = Menu("/org/foamy/Spotify/Menu", "/org/foamy/Spotify", [
-    (2, {"label": "Minimize to Tray", "visible": False}, []),
-    (3, {"label": "Show Spotify"}, []),
-    (4, {"type": "separator"}, []),
-    (5, {"label": "Exit"}, []),
-])
-items = [Item("/org/foamy/One", "foamy-test", "Test app", 0, "/org/foamy/One/Menu"),
-         Item("/org/foamy/Two", "foamy-second", "Second app", 1, "/org/foamy/Two/Menu"),
-         Item("/org/foamy/Spotify", "spotify-client", "spotify", 2, "/org/foamy/Spotify/Menu")]
+spotify_menu = Menu(
+    "/org/foamy/Spotify/Menu",
+    "/org/foamy/Spotify",
+    [
+        (2, {"label": "Minimize to Tray", "visible": False}, []),
+        (3, {"label": "Show Spotify"}, []),
+        (4, {"type": "separator"}, []),
+        (5, {"label": "Exit"}, []),
+    ],
+)
+items = [
+    Item("/org/foamy/One", "foamy-test", "Test app", 0, first_menu),
+    # An oversized, multi-line tooltip title with markup, as any app may send.
+    Item(
+        "/org/foamy/Two", "foamy-second", "Second app", 1, second_menu, "<b>Second</b> " + "A" * 20000 + "\nline" * 60
+    ),
+    Item("/org/foamy/Spotify", "spotify-client", "spotify", 2, spotify_menu),
+    Item("/org/foamy/Plain", "foamy-plain", "Plain app", 3, None),
+]
 for item in items:
     GLib.timeout_add(50, item.poll)
 GLib.MainLoop().run()

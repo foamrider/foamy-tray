@@ -90,12 +90,27 @@ function showWindowEntry(app, entries) {
   return -1
 }
 
-function itemNamed(item, kind) {
-  return appKind(item) === kind
+// A glyph from the widget's `glyphs` setting in shell.json: an object from
+// app name to glyph, matched like APPS (Id, then Title), e.g.
+// { "spotify": "\u{f1bc}" }. Empty when nothing matches.
+function customGlyph(item, glyphs) {
+  if (!item || !glyphs || typeof glyphs !== "object" || Array.isArray(glyphs)) return ""
+  var fields = [item.id, item.title]
+  for (var f = 0; f < fields.length; f++) {
+    for (var name in glyphs) {
+      var glyph = glyphs[name]
+      if (typeof glyph !== "string" || glyph.trim() === "") continue
+      if (nameMatches(fields[f], text(name))) return glyph.trim()
+    }
+  }
+  return ""
 }
 
-// Theme-aware Nerd Font glyphs for low-contrast tray bitmaps.
-function replacementGlyph(item) {
+// Theme-aware Nerd Font glyphs for low-contrast tray bitmaps; the user's
+// `glyphs` setting wins over the built-in ones.
+function replacementGlyph(item, glyphs) {
+  var custom = customGlyph(item, glyphs)
+  if (custom !== "") return custom
   var kind = appKind(item)
   if (kind === "steam") return "\u{f1b6}"
   if (kind === "remmina") return "\u{eb3a}"
@@ -122,6 +137,48 @@ function warpConnectionIcon(item) {
   return icon.replace(/\/attention(_disconnected)?\.png(?=\?|$)/, function(match, disconnected) {
     return disconnected ? "/disconnected.png" : "/connected.png"
   })
+}
+
+// The bar tooltip text for a tray item: its tooltip title, else its Title
+// or Id. All three come from the app, unbounded; Tray.qml caps the text with
+// FoamyText.tooltip() before the host sizes its popup to it.
+function tooltipText(item) {
+  if (!item) return ""
+  return String(item.tooltipTitle || item.title || item.id || "")
+}
+
+// A menu entry's label on one line. Labels come from the app and may hold
+// line breaks; a row draws one line of text, so a break would spill the
+// rest over the neighbouring rows. Breaks become spaces and the row elides
+// whatever does not fit. Each break run and the whitespace around it become
+// one space. Split and trim, not one /\s*…\s*/ regex: that backtracks over a
+// long run of spaces with no break after it (quadratic), and the label is
+// app-supplied and normalized while the menu opens.
+function menuLabel(value) {
+  var parts = String(value === undefined || value === null ? "" : value).split(/[\r\n\u2028\u2029]+/)
+  if (parts.length === 1)
+    return parts[0]
+  var out = trimSide(parts[0], false, true)
+  for (var i = 1; i < parts.length; i++) {
+    var part = trimSide(parts[i], true, i < parts.length - 1)
+    // A whitespace-only line between two breaks folds into the one space.
+    if (part !== "" || i === parts.length - 1)
+      out += " " + part
+  }
+  return out
+}
+
+// `text` without leading (`start`) and/or trailing (`end`) whitespace, one
+// character test at a time: linear, and Quickshell's JS has no
+// trimStart/trimEnd (a /\s+$/ regex would backtrack like the one above).
+function trimSide(text, start, end) {
+  var from = 0
+  var to = text.length
+  while (start && from < to && /\s/.test(text.charAt(from)))
+    from++
+  while (end && to > from && /\s/.test(text.charAt(to - 1)))
+    to--
+  return text.substring(from, to)
 }
 
 // Menu rows the tray hides: the root entry that only repeats the app's name,
@@ -168,14 +225,16 @@ function adjacentMenu(hasMenu, current, direction) {
 if (typeof module !== "undefined") {
   module.exports = {
     appKind: appKind,
-    itemNamed: itemNamed,
     windowApp: windowApp,
     appWindow: appWindow,
     showWindowEntry: showWindowEntry,
+    customGlyph: customGlyph,
     replacementGlyph: replacementGlyph,
     primaryClickOpensMenu: primaryClickOpensMenu,
     monochrome: monochrome,
     warpConnectionIcon: warpConnectionIcon,
+    tooltipText: tooltipText,
+    menuLabel: menuLabel,
     hiddenRows: hiddenRows,
     cursorStops: cursorStops,
     adjacentMenu: adjacentMenu

@@ -22,8 +22,9 @@ empty. The bar's open-panel mark sits under the icon whose menu is open.
 
 ## Use
 
-- Left-click runs the app's default action; right-click opens its menu;
-  middle-click runs its secondary action; scrolling is passed to the app.
+- Left-click runs the app's default action; right-click opens its menu
+  (an app without a menu ignores it); middle-click runs its secondary
+  action; scrolling is passed to the app.
 - Steam, Remmina and ChatGPT are drawn with theme-aware Omarchy font glyphs
   and open their menus on left-click. Cloudflare WARP also opens its menu on
   left-click. Spotify ignores the default action, so left-click brings its
@@ -58,29 +59,45 @@ left languages mirror the menu.
 
 ## Settings
 
-None. The tray has no settings of its own.
+There is no settings panel. One optional key on the tray's entry in
+`~/.config/omarchy/shell.json` replaces app icons with font glyphs:
+
+```json
+{ "id": "foamy.tray", "glyphs": { "spotify": "\uf1bc" } }
+```
+
+`glyphs` maps an app name to a glyph from the bar font (any Nerd Font
+glyph). Names match the tray item's id or title the same way the built-in
+special cases do (so `spotify` matches Spotify's `spotify-client`). The
+glyph is drawn in the bar's foreground colour, so it follows light and dark
+themes. It takes the place of a built-in glyph, and it changes only the
+icon, not what a click does.
 
 ## Development
 
 ```sh
-./test.sh                 # all of the below except validate
+mise install              # the pinned linters and formatters (once)
+tests/validate.sh         # linters, formatters, kit checks, then tests/suite.sh
+tests/validate.sh --ci    # what CI runs: no Quickshell, no Omarchy host
+tests/suite.sh [--fast]   # the tests alone; --fast skips the runtime test
+./test.sh                 # node, kit-check and runtime tests
 node tests/tray-model.test.js
 node tests/i18n.test.js
 bash tests/kit-check.sh
-python3 -I tests/runtime.py [--host 4.5|4.0|both] [--shots DIR]
+python3 -I tests/runtime.py [--shots DIR] [--theme light]
 omarchy plugin validate .
 ```
 
 `tests/runtime.py` loads the host's real bar from the installed Omarchy 4.5
 shell (`/usr/share/omarchy/shell`; set `FOAMY_HOST_45` to use another tree)
 offscreen, in temporary HOME and XDG directories, with the bar's window
-swapped for an offscreen one. Two synthetic
+swapped for an offscreen one. Four synthetic
 apps on the harness's private D-Bus session provide tray items and
-menus, so the desktop's own tray is never seen or touched, and no host script
-runs. It checks the 4.5 tray-section hooks in all four bar positions and the
-menu's keyboard model. `--shots DIR` saves screenshots. `--host 4.0` and
-`--host both` run 4.0 only against an Omarchy 4.0 shell tree in
-`FOAMY_HOST_40`, and print a SKIP line without one.
+menus (one has none), so the desktop's own tray is never seen or touched, and no host script
+runs. It checks the 4.5 tray-section hooks in all four bar positions, the
+menu's keyboard model, and app data the tray must bound: an oversized
+tooltip, a multi-line menu label, an app whose icon goes away while
+its menu is open, and right-click on an app without a menu. `--shots DIR` saves screenshots.
 
 Test dependencies: `node`, `python`, `python-dbus`, `python-gobject`,
 `python-pillow` (screenshots only), `dbus` (`dbus-daemon`), `quickshell`,
@@ -88,7 +105,7 @@ and a [foamy-kit](https://github.com/foamrider/foamy-kit) checkout at
 `~/GitHub/Personal/foamy-kit` (or `FOAMY_KIT`, 0.2.0 or later) for the offscreen harness. Its
 `preview/render.py` renders the mock menus in `preview/Preview.qml`;
 `preview.png` is the top right of `menu-cursor-screen.png` from
-`tests/runtime.py --host 4.5 --shots DIR`.
+`tests/runtime.py --shots DIR`.
 
 Shared parts (popup card, cursor, tokens, icons, translations) come from
 foamy-kit as stamped copies in `kit/`. Don't edit them here: change foamy-kit

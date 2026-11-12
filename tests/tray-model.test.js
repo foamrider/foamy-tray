@@ -5,6 +5,7 @@
 const assert = require("node:assert/strict")
 const path = require("node:path")
 const Model = require(path.join(__dirname, "..", "TrayModel.js"))
+const Text = require(path.join(__dirname, "..", "kit", "node-loader.cjs")).load("FoamyText")
 
 let passed = 0
 function test(name, body) {
@@ -144,6 +145,62 @@ test("finds the menu entry that shows the window", () => {
   assert.equal(Model.showWindowEntry(app, [{ text: "Show Spotify", enabled: false }]), -1)
   assert.equal(Model.showWindowEntry(app, [{ text: "Exit" }]), -1)
   assert.equal(Model.showWindowEntry(null, entries), -1)
+})
+
+test("the glyphs setting replaces an app's icon", () => {
+  const glyphs = { Spotify: "\u{f1bc}", steam: "S", remmina: "  ", warp: 3 }
+  assert.equal(Model.replacementGlyph(spotify, glyphs), "\u{f1bc}")
+  assert.equal(Model.replacementGlyph({ id: "x", title: "Spotify" }, glyphs), "\u{f1bc}")
+  assert.equal(Model.replacementGlyph(steam, glyphs), "S")
+  // Blank or non-string entries keep the built-in glyph or the app's icon.
+  assert.equal(Model.replacementGlyph(remmina, glyphs), "\u{eb3a}")
+  assert.equal(Model.replacementGlyph(warp, glyphs), "")
+  assert.equal(Model.replacementGlyph({ id: "spotifyd" }, glyphs), "")
+  assert.equal(Model.replacementGlyph(spotify, null), "")
+  assert.equal(Model.replacementGlyph(spotify, ["\u{f1bc}"]), "")
+  // A custom glyph changes only the icon, not the click.
+  assert.equal(Model.primaryClickOpensMenu(spotify), false)
+  assert.ok(Model.windowApp(spotify))
+})
+
+test("tooltips are the app's text, capped by FoamyText before the host sizes its popup", () => {
+  // The app's tooltip title, else its Title, else its Id; markup passes
+  // through (the host draws plain text).
+  assert.equal(Model.tooltipText(spotify), "Warpaint – Love Is To Die")
+  assert.equal(Model.tooltipText(steam), "Steam")
+  assert.equal(Model.tooltipText({ id: "nextcloud" }), "nextcloud")
+  assert.equal(Model.tooltipText({ tooltipTitle: "Nextcloud\nSynced" }), "Nextcloud\nSynced")
+  assert.equal(Model.tooltipText({ tooltipTitle: "<b>x</b>" }), "<b>x</b>")
+  assert.equal(Model.tooltipText(null), "")
+  assert.equal(Model.tooltipText({}), "")
+  // What Tray.qml shows for the reproduced title, 20,000 characters plus 60
+  // lines: TOOLTIP_LINES lines, the long one cut, and the cut shows at the
+  // end (the kit's tests cover the cap itself).
+  const tip = Text.tooltip(Model.tooltipText({ tooltipTitle: "A".repeat(20000) + "\nline".repeat(60) }))
+  assert.deepEqual(tip.split("\n"), ["A".repeat(Text.TOOLTIP_CHARS - 1) + "…"]
+    .concat(Array(Text.TOOLTIP_LINES - 2).fill("line"), ["line…"]))
+  assert.equal(Text.tooltip(Model.tooltipText(spotify)), "Warpaint – Love Is To Die")
+})
+
+test("menu labels stay on one line", () => {
+  assert.equal(Model.menuLabel("Quit"), "Quit")
+  assert.equal(Model.menuLabel("Offline mode\nsecond line\r\nthird"), "Offline mode second line third")
+  assert.equal(Model.menuLabel("a \n\n b\u2028c\u2029d\re"), "a b c d e")
+  assert.equal(Model.menuLabel("  _Open  "), "  _Open  ")
+  assert.equal(Model.menuLabel(undefined), "")
+  // Same result as the one-regex form it replaces, on edge cases.
+  const regexForm = (v) => String(v).replace(/\s*[\r\n\u2028\u2029]+\s*/g, " ")
+  for (const label of ["\n", "\n\n", " \n ", "a\n", "\na", " a \n b ", "a\n \n b", "a \n\t\n \nb", "\t\n\u2028 x", "a\r\n", "x\u00a0\ny", "a\n\n\n", "  \n  \n  "]) {
+    assert.equal(Model.menuLabel(label), regexForm(label), JSON.stringify(label))
+  }
+  // Linear in the label: a long run of spaces with no break after it took
+  // seconds with the regex (80 000 spaces: about 4 s), and the menu waits.
+  const started = Date.now()
+  assert.equal(Model.menuLabel("Item" + " ".repeat(400000) + "X").length, 400005)
+  assert.equal(Model.menuLabel("Item\n" + " ".repeat(400000) + "X"), "Item X")
+  assert.ok(Date.now() - started < 1000, `took ${Date.now() - started} ms`)
+  assert.equal(Model.menuLabel(null), "")
+  assert.equal(Model.menuLabel(3), "3")
 })
 
 console.log("RESULT: " + passed + " tray model tests passed")

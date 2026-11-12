@@ -1,0 +1,15 @@
+# Names Vulture reports as unused that are called from where it can't see.
+# tests/status_notifier.py: D-Bus methods and signals of the fixture apps.
+# dbus-python calls them by name when Quickshell sends the method call.
+Activate  # org.kde.StatusNotifierItem method
+SecondaryActivate  # org.kde.StatusNotifierItem method
+ContextMenu  # org.kde.StatusNotifierItem method; recorded so a test sees any call
+Get  # org.freedesktop.DBus.Properties method
+GetLayout  # com.canonical.dbusmenu method
+GetGroupProperties  # com.canonical.dbusmenu method
+GetProperty  # com.canonical.dbusmenu method
+EventGroup  # com.canonical.dbusmenu method
+AboutToShow  # com.canonical.dbusmenu method
+AboutToShowGroup  # com.canonical.dbusmenu method
+LayoutUpdated  # com.canonical.dbusmenu signal; dbus-python emits it on call
+revision  # an argument of the LayoutUpdated signal: its D-Bus signature needs it
