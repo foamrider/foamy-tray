@@ -13,7 +13,7 @@ host's plugins/bar/Bar.qml is loaded with its PanelWindow swapped for
 tests/qml/FakeBarWindow.qml; everything else is the host's code. Bar helper
 commands (omarchy-bar …) resolve to no-op stubs, no host script or binary is
 run. Each run gets the harness's private D-Bus session (foamy-kit 0.2.0):
-three synthetic apps (tests/status_notifier.py) provide tray items and
+four synthetic apps (tests/status_notifier.py, one without a menu) provide tray items and
 DBusMenus there, and the desktop's tray is never seen or touched.
 
 FOAMY_TRAY_KEEP=1 keeps the run directory (log, events) after a pass.
@@ -37,6 +37,9 @@ os.environ.setdefault("FOAMY_HOST_45", "/usr/share/omarchy/shell")
 # Host commands the bar may run, as no-op stand-ins ahead of the harness's
 # isolated PATH. Any other host command fails the run (Run.host_commands()).
 STUBS = ("omarchy-bar", "omarchy-bar-text-color", "omarchy-shell", "omarchy", "hyprctl")
+# Quickshell errors that mean the tray called something it must not, on top
+# of the harness's markers: display() on an item without a DBusMenu.
+TRAY_ERRORS = ("No menu present",)
 
 
 def transform_bar(text):
@@ -147,12 +150,13 @@ def run_host(host_name, shots, theme, plugin, shell_path=PLUGIN / "tests/qml/Run
             fixture.wait(timeout=5)
     host_commands = run.host_commands()
     run.ok = "FOAMY DONE" in run.log and "FOAMY FAIL" not in run.log \
-        and not any(marker in run.log for marker in harness.FAILURE_MARKERS) and not host_commands
+        and not any(marker in run.log for marker in harness.FAILURE_MARKERS + TRAY_ERRORS) and not host_commands
     result = next((line.split("FOAMY RESULT ", 1)[1] for line in run.log.splitlines() if "FOAMY RESULT" in line), "no result")
     ok = run.ok
     print(f"{'PASS' if ok else 'FAIL'} runtime {host_name} ({theme}): {result}")
     if not ok:
-        print("\n".join("    " + line for line in (run.failures() or run.log.splitlines()[-40:])))
+        errors = [line for line in run.log.splitlines() if any(marker in line for marker in TRAY_ERRORS)]
+        print("\n".join("    " + line for line in (run.failures() + errors or run.log.splitlines()[-40:])))
         for line in host_commands:
             print(f"    host command run: {line}")
         print(f"    log kept at {run.base}")

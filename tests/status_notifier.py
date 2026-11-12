@@ -1,4 +1,4 @@
-"""Three synthetic tray apps with DBusMenus, for tests/runtime.py.
+"""Synthetic tray apps for tests/runtime.py: three with DBusMenus, one without.
 
 Runs only on the private bus that tests/runtime.py gets from the foamy-kit
 harness; it refuses to start on any other bus.
@@ -7,8 +7,9 @@ harness; it refuses to start on any other bus.
 
 Line 1 of the status file is the first app's status (Passive/Active/
 NeedsAttention), line 2 the second app's, line 3 a Spotify-like app's that
-hides to the tray (Passive when missing). Menu clicks
-are appended to the events file as "<item path> <menu id> <event>".
+hides to the tray, line 4 an app without a DBusMenu (Passive when missing).
+Menu clicks are appended to the events file as "<item path> <menu id> <event>",
+item method calls as "<item path> - <method>".
 """
 import os
 import sys
@@ -124,19 +125,33 @@ class Item(dbus.service.Object):
 
     @dbus.service.method(PROPS, in_signature="s", out_signature="a{sv}")
     def GetAll(self, interface):
-        return {"Category": "ApplicationStatus", "Id": self.item_id, "Title": self.title,
-                "Status": self.status, "IconName": "", "IconPixmap": PIXMAP, "ItemIsMenu": False,
-                "ToolTip": dbus.Struct(("", dbus.Array([], signature="(iiay)"), self.tooltip, ""), signature="sa(iiay)ss"),
-                "Menu": dbus.ObjectPath(self.menu_path)}
+        props = {"Category": "ApplicationStatus", "Id": self.item_id, "Title": self.title,
+                 "Status": self.status, "IconName": "", "IconPixmap": PIXMAP, "ItemIsMenu": False,
+                 "ToolTip": dbus.Struct(("", dbus.Array([], signature="(iiay)"), self.tooltip, ""), signature="sa(iiay)ss")}
+        # An app without a DBusMenu has no Menu property.
+        if self.menu_path:
+            props["Menu"] = dbus.ObjectPath(self.menu_path)
+        return props
 
     @dbus.service.method(PROPS, in_signature="ss", out_signature="v")
     def Get(self, interface, key):
         return self.GetAll(interface)[key]
 
+    def record(self, method):
+        with events_file.open("a") as out:
+            out.write(f"{self.path} - {method}\n")
+
     @dbus.service.method(SNI, in_signature="ii", out_signature="")
     def Activate(self, x, y):
-        with events_file.open("a") as out:
-            out.write(f"{self.path} - activate\n")
+        self.record("activate")
+
+    @dbus.service.method(SNI, in_signature="ii", out_signature="")
+    def SecondaryActivate(self, x, y):
+        self.record("secondary-activate")
+
+    @dbus.service.method(SNI, in_signature="ii", out_signature="")
+    def ContextMenu(self, x, y):
+        self.record("context-menu")
 
     @dbus.service.signal(SNI, signature="s")
     def NewStatus(self, status):
@@ -183,7 +198,8 @@ items = [Item("/org/foamy/One", "foamy-test", "Test app", 0, "/org/foamy/One/Men
          # An oversized, multi-line tooltip title with markup, as any app may send.
          Item("/org/foamy/Two", "foamy-second", "Second app", 1, "/org/foamy/Two/Menu",
               "<b>Second</b> " + "A" * 20000 + "\nline" * 60),
-         Item("/org/foamy/Spotify", "spotify-client", "spotify", 2, "/org/foamy/Spotify/Menu")]
+         Item("/org/foamy/Spotify", "spotify-client", "spotify", 2, "/org/foamy/Spotify/Menu"),
+         Item("/org/foamy/Plain", "foamy-plain", "Plain app", 3, None)]
 for item in items:
     GLib.timeout_add(50, item.poll)
 GLib.MainLoop().run()

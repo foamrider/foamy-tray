@@ -12,11 +12,12 @@ import "plugin/TrayModel.js" as TrayModel
 import "plugin/kit/FoamyText.js" as FoamyText
 
 // Offscreen integration test, run by tests/runtime.py: the host's real
-// Bar.qml (Omarchy 4.5) hosts Foamy Tray, and three synthetic apps on a
+// Bar.qml (Omarchy 4.5) hosts Foamy Tray, and four synthetic apps on a
 // private D-Bus session supply tray items and DBusMenus. Covers the
 // tray-section hooks (sectionHost, sectionEdge, sectionShown, tray layout,
 // drag drop target), passive items, the open-panel mark, and the menu's
-// keyboard cursor, submenus, Esc, Tab between app menus and activation.
+// keyboard cursor, submenus, Esc, Tab between app menus and activation, and
+// right-click on an app without a DBusMenu.
 ShellRoot {
   id: test
   property int checks: 0
@@ -29,6 +30,7 @@ ShellRoot {
   property int first: 0
   property int second: 1
   property int spotify: -1
+  property int plain: -1
   readonly property string shots: Quickshell.env("FOAMY_TRAY_SHOTS") || ""
   readonly property string theme: Quickshell.env("FOAMY_TRAY_THEME") || "dark"
 
@@ -289,7 +291,7 @@ ShellRoot {
         test.check(TrayModel.replacementGlyph({ id: "steam" }) === String.fromCharCode(0xf1b6)
           && TrayModel.replacementGlyph({ id: "remmina-icon" }) === String.fromCharCode(0xeb3a),
           "escaped Nerd Font glyphs survive in the QML engine")
-        t.openTrayMenu(t.trayItems[test.first], t.trayAnchor(test.first), null)
+        t.openTrayMenu(t.trayItems[test.first], t.trayAnchor(test.first))
         break
       case 32:
         if (!test.settle(function() { m = t.trayMenu; return t.trayMenuOpen && !!m && m.entries.length === 5 }, "menu opens with the app's DBusMenu entries")) break
@@ -363,7 +365,7 @@ ShellRoot {
         break
       case 41:
         if (!test.settle(function() { return test.eventLog().indexOf("/org/foamy/One 1 clicked") !== -1 }, "Enter sends the entry's click to the app")) break
-        t.openTrayMenu(t.trayItems[test.first], t.trayAnchor(test.first), null)
+        t.openTrayMenu(t.trayItems[test.first], t.trayAnchor(test.first))
         break
       case 42:
         test.check(t.trayMenuOpen && t.submenuDepth === 0 && m.cursor.index === -1, "reopening starts unlit at the top")
@@ -371,7 +373,7 @@ ShellRoot {
         break
       case 43:
         test.check(!t.trayMenuOpen, "Esc at the top level closes the menu")
-        t.openTrayMenu(t.trayItems[test.first], t.trayAnchor(test.first), null)
+        t.openTrayMenu(t.trayItems[test.first], t.trayAnchor(test.first))
         break
       case 44:
         test.check(t.trayMenuOpen && t.activeTrayItem === t.trayItems[test.first], "the first app's menu is open again")
@@ -390,13 +392,34 @@ ShellRoot {
         break
       case 47:
         // No Hyprland window offscreen, so the click goes to its "Show Spotify" entry.
-        t.trayAnchor(test.spotify).primaryClick(null)
+        t.trayAnchor(test.spotify).primaryClick()
         break
       case 48:
         if (!test.settle(function() { return test.eventLog().indexOf("/org/foamy/Spotify 3 clicked") !== -1 },
           "left-click on Spotify triggers Show Spotify")) break
         test.check(test.eventLog().indexOf("/org/foamy/Spotify - activate") === -1 && !t.trayMenuOpen,
           "and neither sends Activate nor opens the menu")
+        status.setText("Active\nActive\nActive\nActive\n")
+        break
+      case 49:
+        if (!test.settle(function() {
+          test.plain = test.appIndex(t, "foamy-plain")
+          return test.plain >= 0 && !!t.trayAnchor(test.plain)
+        }, "an app without a DBusMenu is shown")) break
+        test.check(!t.trayItems[test.plain].hasMenu && !t.trayItems[test.plain].menu, "and Quickshell reports no menu for it")
+        // Right-click goes through the same path as the MouseArea's press.
+        t.trayAnchor(test.plain).displayMenu()
+        test.check(!t.trayMenuOpen && !t.menuPopup.open, "right-click on it opens no menu card")
+        // A middle-click after it: D-Bus keeps one connection's calls in
+        // order, so any call the right-click made arrives before this one.
+        t.trayItems[test.plain].secondaryActivate()
+        break
+      case 50:
+        if (!test.settle(function() { return test.eventLog().indexOf("/org/foamy/Plain - secondary-activate") !== -1 },
+          "a middle-click on it reaches the app")) break
+        var plainLog = test.eventLog().split("\n").filter(function(line) { return line.indexOf("/org/foamy/Plain ") === 0 })
+        test.check(JSON.stringify(plainLog) === JSON.stringify(["/org/foamy/Plain - secondary-activate"]),
+          "right-click on it calls nothing on the app: " + JSON.stringify(plainLog))
         test.finish()
         break
       }

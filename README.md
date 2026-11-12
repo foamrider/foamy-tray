@@ -22,8 +22,9 @@ empty. The bar's open-panel mark sits under the icon whose menu is open.
 
 ## Use
 
-- Left-click runs the app's default action; right-click opens its menu;
-  middle-click runs its secondary action; scrolling is passed to the app.
+- Left-click runs the app's default action; right-click opens its menu
+  (an app without a menu ignores it); middle-click runs its secondary
+  action; scrolling is passed to the app.
 - Steam, Remmina and ChatGPT are drawn with theme-aware Omarchy font glyphs
   and open their menus on left-click. Cloudflare WARP also opens its menu on
   left-click. Spotify ignores the default action, so left-click brings its
@@ -86,13 +87,13 @@ omarchy plugin validate .
 `tests/runtime.py` loads the host's real bar from the installed Omarchy 4.5
 shell (`/usr/share/omarchy/shell`; set `FOAMY_HOST_45` to use another tree)
 offscreen, in temporary HOME and XDG directories, with the bar's window
-swapped for an offscreen one. Three synthetic
+swapped for an offscreen one. Four synthetic
 apps on the harness's private D-Bus session provide tray items and
-menus, so the desktop's own tray is never seen or touched, and no host script
+menus (one has none), so the desktop's own tray is never seen or touched, and no host script
 runs. It checks the 4.5 tray-section hooks in all four bar positions, the
 menu's keyboard model, and app data the tray must bound: an oversized
-tooltip, a multi-line menu label, and an app whose icon goes away while
-its menu is open. `--shots DIR` saves screenshots.
+tooltip, a multi-line menu label, an app whose icon goes away while
+its menu is open, and right-click on an app without a menu. `--shots DIR` saves screenshots.
 
 Test dependencies: `node`, `python`, `python-dbus`, `python-gobject`,
 `python-pillow` (screenshots only), `dbus` (`dbus-daemon`), `quickshell`,

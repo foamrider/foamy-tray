@@ -130,14 +130,11 @@ BarWidget {
   // anchored to the whole tray and without the open-panel mark.
   onTrayItemsChanged: if (trayMenuOpen && trayItems.indexOf(activeTrayItem) < 0) close()
 
-  function openTrayMenu(item, anchorItem, mouse) {
-    if (!item) return
-    if (!item.menu) {
-      if (!mouse) return
-      var point = anchorItem.QsWindow.contentItem.mapFromItem(anchorItem, mouse.x, mouse.y)
-      item.display(anchorItem.QsWindow.window, point.x, point.y)
-      return
-    }
+  // An app without a DBusMenu has no menu to open. Quickshell's
+  // item.display() only logs "No menu present" for it and never calls the
+  // app's ContextMenu method, so right-click does nothing there.
+  function openTrayMenu(item, anchorItem) {
+    if (!item || !item.menu) return
 
     // Reset before switching items: trayMenuOpener.menu binds to
     // activeTrayItem.menu, so assigning a new item invalidates the old root's
@@ -172,7 +169,7 @@ BarWidget {
     var hasMenu = trayItems.map(function(item) { return !!item.menu })
     var next = TrayModel.adjacentMenu(hasMenu, current, direction)
     if (next < 0 || !trayAnchor(next)) return false
-    openTrayMenu(trayItems[next], trayAnchor(next), null)
+    openTrayMenu(trayItems[next], trayAnchor(next))
     return true
   }
 
@@ -363,12 +360,12 @@ BarWidget {
     implicitWidth: root.trayItemExtent
     implicitHeight: root.trayItemExtent
 
-    function displayMenu(mouse) {
-      root.openTrayMenu(trayItemRoot.modelData, trayItemRoot, mouse)
+    function displayMenu() {
+      root.openTrayMenu(trayItemRoot.modelData, trayItemRoot)
     }
 
-    function primaryClick(mouse) {
-      if (primaryClickOpensMenu) displayMenu(mouse)
+    function primaryClick() {
+      if (primaryClickOpensMenu) displayMenu()
       else if (!windowApp || !root.showAppWindow(windowApp, windowAppMenu.children ? windowAppMenu.children.values : []))
         modelData.activate()
     }
@@ -411,7 +408,7 @@ BarWidget {
       onExited: if (root.bar) root.bar.hideTooltip(trayItemRoot)
       onPressed: function(mouse) {
         if (mouse.button === Qt.RightButton) {
-          trayItemRoot.displayMenu(mouse)
+          trayItemRoot.displayMenu()
           mouse.accepted = true
         }
       }
@@ -422,7 +419,7 @@ BarWidget {
         } else if (mouse.button === Qt.MiddleButton) {
           trayItemRoot.modelData.secondaryActivate()
         } else {
-          trayItemRoot.primaryClick(mouse)
+          trayItemRoot.primaryClick()
         }
       }
       onWheel: function(wheel) {
