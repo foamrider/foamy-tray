@@ -1,0 +1,90 @@
+# qmllint findings accepted when the check was adopted. tests/validate.sh fails on any
+# finding not listed here. Regenerate with `tests/validate.sh --update-baseline qmllint`
+# only to drop fixed entries or after reviewing every added one; never to pass a check.
+Tray.qml: block-scope-var-declaration: var declaration in block scope is hoisted to function scope | for (var i = 0; i < list.length; i++) {
+Tray.qml: block-scope-var-declaration: var declaration in block scope is hoisted to function scope | for (var i = openers.length - 1; i >= 0; i--)
+Tray.qml: block-scope-var-declaration: var declaration in block scope is hoisted to function scope | var ipc = list[i].lastIpcObject
+Tray.qml: block-scope-var-declaration: var declaration in block scope is hoisted to function scope | var toplevel = list[i].wayland
+Tray.qml: missing-property: Member "body" not found on type "QObject" | fontSize: Style.font.body
+Tray.qml: missing-property: Member "family" not found on type "QObject" | readonly property string fontFamily: bar ? bar.fontFamily : Style.font.family
+Tray.qml: missing-property: Member "fontFamily" not found on type "QObject" | readonly property string fontFamily: bar ? bar.fontFamily : Style.font.family
+Tray.qml: missing-property: Member "foreground" not found on type "QObject" | readonly property color foreground: bar ? bar.foreground : Commons.Color.foreground
+Tray.qml: missing-property: Member "iconCanvas" not found on type "QObject" | height: Style.bar.iconCanvas
+Tray.qml: missing-property: Member "iconCanvas" not found on type "QObject" | width: Style.bar.iconCanvas
+Tray.qml: missing-property: Member "iconSlot" not found on type "QObject" | readonly property int trayItemExtent: Style.bar.iconSlot
+Tray.qml: missing-property: Member "layoutConfig" not found on type "QObject" | readonly property int sectionCount: bar && bar.layoutConfig && Array.isArray(bar.layoutConfig.tray) ? bar.layoutConfig.tray.length : 0
+Tray.qml: missing-property: Member "layoutConfig" not found on type "QObject" | readonly property int sectionCount: bar && bar.layoutConfig && Array.isArray(bar.layoutConfig.tray) ? bar.layoutConfig.tray.length : 0
+Tray.qml: missing-property: Member "layoutConfig" not found on type "QObject" | readonly property int sectionCount: bar && bar.layoutConfig && Array.isArray(bar.layoutConfig.tray) ? bar.layoutConfig.tray.length : 0
+Tray.qml: missing-property: Member "reset" not found on type "QQuickItem" | trayMenuPopup.bodyItem.reset()
+Tray.qml: missing-property: Member "traySectionDragActive" not found on type "QObject" | readonly property bool sectionDragActive: !!bar && bar.traySectionDragActive === true
+Tray.qml: unqualified: Unqualified access | appTitle: root.activeTrayItem ? String(root.activeTrayItem.title || root.activeTrayItem.id || "") : ""
+Tray.qml: unqualified: Unqualified access | appTitle: root.activeTrayItem ? String(root.activeTrayItem.title || root.activeTrayItem.id || "") : ""
+Tray.qml: unqualified: Unqualified access | appTitle: root.activeTrayItem ? String(root.activeTrayItem.title || root.activeTrayItem.id || "") : ""
+Tray.qml: unqualified: Unqualified access | color: root.foreground
+Tray.qml: unqualified: Unqualified access | colorizationColor: root.foreground
+Tray.qml: unqualified: Unqualified access | depth: root.submenuDepth
+Tray.qml: unqualified: Unqualified access | else if (!windowApp || !root.showAppWindow(windowApp, windowAppMenu.children ? windowAppMenu.children.values : []))
+Tray.qml: unqualified: Unqualified access | entries: root.currentChildren ? root.currentChildren.values : []
+Tray.qml: unqualified: Unqualified access | entries: root.currentChildren ? root.currentChildren.values : []
+Tray.qml: unqualified: Unqualified access | fontFamily: root.fontFamily
+Tray.qml: unqualified: Unqualified access | implicitHeight: root.trayItemExtent
+Tray.qml: unqualified: Unqualified access | implicitWidth: root.trayItemExtent
+Tray.qml: unqualified: Unqualified access | onBack: root.leaveSubmenu()
+Tray.qml: unqualified: Unqualified access | onDismiss: root.close()
+Tray.qml: unqualified: Unqualified access | onEntered: if (root.bar)
+Tray.qml: unqualified: Unqualified access | onExited: if (root.bar)
+Tray.qml: unqualified: Unqualified access | pointerSettling: root.menuLevelSettling
+Tray.qml: unqualified: Unqualified access | readonly property bool recolor: monochrome || root.iconIsSymbolic(icon)
+Tray.qml: unqualified: Unqualified access | readonly property string replacementGlyph: TrayModel.replacementGlyph(modelData, root.setting("glyphs", null))
+Tray.qml: unqualified: Unqualified access | root.bar.hideTooltip(trayItemRoot)
+Tray.qml: unqualified: Unqualified access | root.bar.showTooltip(trayItemRoot, root.trayTooltip(modelData))
+Tray.qml: unqualified: Unqualified access | root.bar.showTooltip(trayItemRoot, root.trayTooltip(modelData))
+Tray.qml: unqualified: Unqualified access | root.bar.showTooltip(trayItemRoot, root.trayTooltip(modelData))
+Tray.qml: unqualified: Unqualified access | root.close()
+Tray.qml: unqualified: Unqualified access | root.enterSubmenu(entry, title)
+Tray.qml: unqualified: Unqualified access | root.openTrayMenu(trayItemRoot.modelData, trayItemRoot)
+Tray.qml: unqualified: Unqualified access | root.switchTrayMenu(direction)
+Tray.qml: unqualified: Unqualified access | source: root.trayIconSource(trayIconRoot.icon)
+Tray.qml: unqualified: Unqualified access | title: root.currentTitle
+Tray.qml: unqualified: Unqualified access | x: root.vertical ? (root.barSize - width) / 2 : index * root.trayItemExtent + (root.sectionAtStart ? root.sectionExtent : 0)
+Tray.qml: unqualified: Unqualified access | x: root.vertical ? (root.barSize - width) / 2 : index * root.trayItemExtent + (root.sectionAtStart ? root.sectionExtent : 0)
+Tray.qml: unqualified: Unqualified access | x: root.vertical ? (root.barSize - width) / 2 : index * root.trayItemExtent + (root.sectionAtStart ? root.sectionExtent : 0)
+Tray.qml: unqualified: Unqualified access | x: root.vertical ? (root.barSize - width) / 2 : index * root.trayItemExtent + (root.sectionAtStart ? root.sectionExtent : 0)
+Tray.qml: unqualified: Unqualified access | x: root.vertical ? (root.barSize - width) / 2 : index * root.trayItemExtent + (root.sectionAtStart ? root.sectionExtent : 0)
+Tray.qml: unqualified: Unqualified access | y: root.vertical ? index * root.trayItemExtent + (root.sectionAtStart ? root.sectionExtent : 0) : (root.barSize - height) / 2
+Tray.qml: unqualified: Unqualified access | y: root.vertical ? index * root.trayItemExtent + (root.sectionAtStart ? root.sectionExtent : 0) : (root.barSize - height) / 2
+Tray.qml: unqualified: Unqualified access | y: root.vertical ? index * root.trayItemExtent + (root.sectionAtStart ? root.sectionExtent : 0) : (root.barSize - height) / 2
+Tray.qml: unqualified: Unqualified access | y: root.vertical ? index * root.trayItemExtent + (root.sectionAtStart ? root.sectionExtent : 0) : (root.barSize - height) / 2
+Tray.qml: unqualified: Unqualified access | y: root.vertical ? index * root.trayItemExtent + (root.sectionAtStart ? root.sectionExtent : 0) : (root.barSize - height) / 2
+Tray.qml: unresolved-type: Type "PopupAnchor" of property "anchor" not found. This is likely due to a missing dependency entry or a type not being exposed declaratively. | trayMenuPopup.anchor.updateAnchor()
+TrayMenu.qml: block-scope-var-declaration: var declaration in block scope is hoisted to function scope | var entry = entryAt(cursor.index)
+TrayMenu.qml: id-shadows-member: Id for object Flickable shadows property "flick". Rename one or the other. | if (row.y < flick.contentY)
+TrayMenu.qml: id-shadows-member: Id for object FoamyCursor shadows property "cursor". Rename one or the other. | if (stop < backStops || stop >= cursor.count)
+TrayMenu.qml: id-shadows-member: Note: Id defined here | id: cursor
+TrayMenu.qml: id-shadows-member: Note: Id defined here | id: flick
+TrayMenu.qml: missing-property: Member "body" not found on type "QObject" | font.pixelSize: FoamyStyle.font.body
+TrayMenu.qml: missing-property: Member "body" not found on type "QObject" | font.pixelSize: FoamyStyle.font.body
+TrayMenu.qml: missing-property: Member "subtitle" not found on type "QObject" | width: FoamyStyle.font.subtitle
+TrayMenu.qml: missing-property: Member "subtitle" not found on type "QObject" | width: FoamyStyle.font.subtitle
+TrayMenu.qml: missing-property: Member "subtitle" not found on type "QObject" | width: FoamyStyle.font.subtitle
+TrayMenu.qml: unqualified: Unqualified access | cursor.hover(row.stop)
+TrayMenu.qml: unqualified: Unqualified access | hasCursor: row.stop >= 0 && cursor.at(row.stop)
+TrayMenu.qml: unqualified: Unqualified access | menu.activate(row.stop)
+TrayMenu.qml: unqualified: Unqualified access | onClicked: if (row.stop >= 0 && !menu.pointerSettling)
+TrayMenu.qml: unqualified: Unqualified access | readonly property bool hiddenRow: !!menu.hidden[index]
+TrayMenu.qml: unqualified: Unqualified access | readonly property int stop: menu.stopFor(index)
+TrayMenu.qml: unqualified: Unqualified access | width: list.width
+preview/Preview.qml: block-scope-var-declaration: var declaration in block scope is hoisted to function scope | for (var i = 1; i <= 40; i++)
+preview/Preview.qml: block-scope-var-declaration: var declaration in block scope is hoisted to function scope | for (var key in extra || {})
+preview/Preview.qml: id-shadows-member: Id for object FoamyPopupCard shadows property "popup". Rename one or the other. | readonly property var popup: popup
+preview/Preview.qml: id-shadows-member: Note: Id defined here | id: popup
+preview/Preview.qml: missing-property: Member "cursor" not found on type "QQuickItem" | menu.cursor.index = 1
+preview/Preview.qml: missing-property: Member "reset" not found on type "QQuickItem" | menu.reset()
+preview/Preview.qml: unqualified: Unqualified access | depth: preview.previewState === "submenu" || preview.previewState === "long" ? 1 : 0
+preview/Preview.qml: unqualified: Unqualified access | depth: preview.previewState === "submenu" || preview.previewState === "long" ? 1 : 0
+preview/Preview.qml: unqualified: Unqualified access | entries: preview.previewState === "submenu" ? preview.subEntries : preview.previewState === "long" ? preview.longEntries : preview.rootEntries
+preview/Preview.qml: unqualified: Unqualified access | entries: preview.previewState === "submenu" ? preview.subEntries : preview.previewState === "long" ? preview.longEntries : preview.rootEntries
+preview/Preview.qml: unqualified: Unqualified access | entries: preview.previewState === "submenu" ? preview.subEntries : preview.previewState === "long" ? preview.longEntries : preview.rootEntries
+preview/Preview.qml: unqualified: Unqualified access | entries: preview.previewState === "submenu" ? preview.subEntries : preview.previewState === "long" ? preview.longEntries : preview.rootEntries
+preview/Preview.qml: unqualified: Unqualified access | entries: preview.previewState === "submenu" ? preview.subEntries : preview.previewState === "long" ? preview.longEntries : preview.rootEntries
+preview/Preview.qml: unqualified: Unqualified access | title: preview.previewState === "long" ? "Stations" : "Friends"
