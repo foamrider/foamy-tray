@@ -16,7 +16,7 @@ Item {
   required property Item anchorItem
   property var previewStates: ["menu", "cursor", "submenu", "long"]
   property string previewState: "menu"
-  readonly property var popup: popup
+  readonly property var popup: previewPopup
 
   readonly property color foreground: Commons.Color.foreground
   readonly property string fontFamily: Style.font.family
@@ -70,14 +70,14 @@ Item {
   readonly property var entries: previewState === "submenu" ? subEntries : previewState === "long" ? longEntries : rootEntries
 
   Dev.TrayPopup {
-    id: popup
+    id: previewPopup
     anchorItem: preview.anchorItem
     bar: preview.bar
     open: true
     padding: Style.space(8)
     borderColor: Qt.rgba(preview.foreground.r, preview.foreground.g, preview.foreground.b, 0.45)
-    contentWidth: popup.fittedContentWidth(Style.space(232))
-    contentHeight: popup.fittedContentHeight((header.visible ? header.implicitHeight : 0) + rows.implicitHeight)
+    contentWidth: previewPopup.fittedContentWidth(Style.space(232))
+    contentHeight: previewPopup.fittedContentHeight((header.visible ? header.implicitHeight : 0) + rows.implicitHeight)
     // The fork has no cardItem and its default alias shadows contentItem:
     // the card is the parent of the content holder.
     property Item cardItem: menuColumn.parent ? menuColumn.parent.parent : null

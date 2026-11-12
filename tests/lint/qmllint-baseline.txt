@@ -76,8 +76,6 @@ TrayMenu.qml: unqualified: Unqualified access | readonly property int stop: menu
 TrayMenu.qml: unqualified: Unqualified access | width: list.width
 preview/Preview.qml: block-scope-var-declaration: var declaration in block scope is hoisted to function scope | for (var i = 1; i <= 40; i++)
 preview/Preview.qml: block-scope-var-declaration: var declaration in block scope is hoisted to function scope | for (var key in extra || {})
-preview/Preview.qml: id-shadows-member: Id for object FoamyPopupCard shadows property "popup". Rename one or the other. | readonly property var popup: popup
-preview/Preview.qml: id-shadows-member: Note: Id defined here | id: popup
 preview/Preview.qml: missing-property: Member "cursor" not found on type "QQuickItem" | menu.cursor.index = 1
 preview/Preview.qml: missing-property: Member "reset" not found on type "QQuickItem" | menu.reset()
 preview/Preview.qml: unqualified: Unqualified access | depth: preview.previewState === "submenu" || preview.previewState === "long" ? 1 : 0

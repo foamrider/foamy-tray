@@ -13,7 +13,7 @@ Item {
   property var previewStates: ["menu", "cursor", "submenu", "long"]
   property string previewState: "menu"
   // FoamyPopupCard is a window, not an Item.
-  readonly property var popup: popup
+  readonly property var popup: previewPopup
 
   function entry(text, extra) {
     var e = {
@@ -60,7 +60,7 @@ Item {
   }
 
   FoamyPopupCard {
-    id: popup
+    id: previewPopup
     anchorItem: preview.anchorItem
     bar: preview.bar
     open: true
@@ -81,7 +81,7 @@ Item {
     interval: 150
     running: true
     onTriggered: {
-      var menu = popup.bodyItem
+      var menu = previewPopup.bodyItem
       if (!menu)
         return
       menu.reset()
