@@ -23,7 +23,7 @@ Tray.qml: unqualified: Unqualified access | appTitle: root.activeTrayItem ? Stri
 Tray.qml: unqualified: Unqualified access | color: root.foreground
 Tray.qml: unqualified: Unqualified access | colorizationColor: root.foreground
 Tray.qml: unqualified: Unqualified access | depth: root.submenuDepth
-Tray.qml: unqualified: Unqualified access | else if (!windowApp || !root.showAppWindow(windowApp, windowAppMenu.children ? windowAppMenu.children.values : []))
+Tray.qml: unqualified: Unqualified access | else if (!windowApp || !root.showAppWindow(windowApp, windowAppEntries))
 Tray.qml: unqualified: Unqualified access | entries: root.currentChildren ? root.currentChildren.values : []
 Tray.qml: unqualified: Unqualified access | entries: root.currentChildren ? root.currentChildren.values : []
 Tray.qml: unqualified: Unqualified access | fontFamily: root.fontFamily
