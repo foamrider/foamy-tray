@@ -507,6 +507,13 @@ ShellRoot {
       }, "a Spotify-like app hidden to the tray is shown")
       break
     case 47:
+      // Its menu loads over D-Bus after the icon shows; a click before that
+      // falls back to Activate.
+      if (!test.settle(function () {
+        var anchor = t.trayAnchor(test.spotify)
+        return TrayModel.showWindowEntry(anchor.windowApp, anchor.windowAppEntries) >= 0
+      }, "its Show Spotify entry is loaded"))
+        break
       // No Hyprland window offscreen, so the click goes to its "Show Spotify" entry.
       t.trayAnchor(test.spotify).primaryClick()
       break

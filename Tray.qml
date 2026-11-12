@@ -390,11 +390,12 @@ BarWidget {
     function primaryClick() {
       if (primaryClickOpensMenu)
         displayMenu()
-      else if (!windowApp || !root.showAppWindow(windowApp, windowAppMenu.children ? windowAppMenu.children.values : []))
+      else if (!windowApp || !root.showAppWindow(windowApp, windowAppEntries))
         modelData.activate()
     }
 
     // Kept open so the "show" entry is already loaded when the icon is clicked.
+    readonly property var windowAppEntries: windowAppMenu.children ? windowAppMenu.children.values : []
     QsMenuOpener {
       id: windowAppMenu
       menu: trayItemRoot.windowApp ? trayItemRoot.modelData.menu : null
