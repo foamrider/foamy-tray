@@ -32,15 +32,26 @@ SNI = "org.kde.StatusNotifierItem"
 MENU = "com.canonical.dbusmenu"
 PROPS = "org.freedesktop.DBus.Properties"
 PIXMAP = dbus.Array([(16, 16, dbus.ByteArray(bytes([255, 125, 90, 210]) * 256))], signature="(iiay)")
+# FIFOs with no writer, as a hostile app may point its menu icons at: opening
+# one blocks until a writer appears, so the shell must never open them.
+FIFOS = events_file.parent / "fifo-icons"
+FIFOS.mkdir(exist_ok=True)
+for fifo in ("fifo.png", "foamy-fifo"):
+    if not (FIFOS / fifo).exists():
+        os.mkfifo(FIFOS / fifo)
+
+# tests/runtime.py's theme icon, sent again as a menu entry's icon-data.
+THEME_PNG = Path(os.environ["XDG_DATA_HOME"]) / "icons/hicolor/16x16/apps/foamy-theme-icon.png"
 
 
 class Menu(dbus.service.Object):
     """A minimal com.canonical.dbusmenu server over a static tree."""
 
-    def __init__(self, path, owner, tree):
+    def __init__(self, path, owner, tree, icon_theme_path=()):
         super().__init__(bus, path)
         self.path = path
         self.owner = owner
+        self.icon_theme_path = list(icon_theme_path)
         self.items = {}
         self.children = {}
         self._index(0, {"children-display": "submenu"}, tree)
@@ -109,7 +120,7 @@ class Menu(dbus.service.Object):
             "Version": dbus.UInt32(3),
             "TextDirection": "ltr",
             "Status": "normal",
-            "IconThemePath": dbus.Array([], signature="s"),
+            "IconThemePath": dbus.Array(self.icon_theme_path, signature="s"),
         }
 
     @dbus.service.method(PROPS, in_signature="ss", out_signature="v")
@@ -191,15 +202,17 @@ class Item(dbus.service.Object):
         return True
 
 
+# Menu icons: "Open window" names a FIFO by absolute path, "Quit" names one
+# through the menu's IconThemePath fallback, "Stations" is a plain theme name.
 first_menu = Menu(
     "/org/foamy/One/Menu",
     "/org/foamy/One",
     [
-        (1, {"label": "Open window"}, []),
+        (1, {"label": "Open window", "icon-name": str(FIFOS / "fifo.png")}, []),
         (2, {"type": "separator"}, []),
         (
             3,
-            {"label": "Stations"},
+            {"label": "Stations", "icon-name": "foamy-theme-icon"},
             [
                 (31, {"label": "Radio A", "toggle-type": "radio", "toggle-state": 0}, []),
                 (32, {"label": "Radio B", "toggle-type": "radio", "toggle-state": 1}, []),
@@ -207,14 +220,16 @@ first_menu = Menu(
         ),
         # A label with line breaks: the row must still draw one line.
         (4, {"label": "Offline mode\nsecond line\nthird line", "enabled": False}, []),
-        (5, {"label": "Quit"}, []),
+        (5, {"label": "Quit", "icon-name": "foamy-fifo"}, []),
     ],
+    icon_theme_path=[str(FIFOS)],
 )
 second_menu = Menu(
     "/org/foamy/Two/Menu",
     "/org/foamy/Two",
     [
-        (1, {"label": "Second action"}, []),
+        # An in-memory icon (icon-data), as most toolkits send.
+        (1, {"label": "Second action", "icon-data": dbus.ByteArray(THEME_PNG.read_bytes())}, []),
     ],
 )
 # Spotify's real menu layout (busctl, read-only).

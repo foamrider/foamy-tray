@@ -27,9 +27,11 @@ from pathlib import Path
 import re
 import shutil
 import signal
+import struct
 import subprocess
 import sys
 import time
+import zlib
 
 PLUGIN = Path(__file__).resolve().parents[1]
 KIT = Path(os.environ.get("FOAMY_KIT", Path.home() / "GitHub/Personal/foamy-kit"))
@@ -72,6 +74,29 @@ def transform_bar(text):
     if replaced == 0:
         raise SystemExit("host Bar.qml changed shape: no PanelWindow component to replace")
     return "\n".join(out) + "\n"
+
+
+def png(rgba, size=16):
+    """A solid size x size RGBA PNG."""
+
+    def chunk(kind, data):
+        return struct.pack(">I", len(data)) + kind + data + struct.pack(">I", zlib.crc32(kind + data))
+
+    rows = b"".join(b"\0" + bytes(rgba) * size for _ in range(size))
+    header = struct.pack(">IIBBBBB", size, size, 8, 6, 0, 0, 0)
+    return b"\x89PNG\r\n\x1a\n" + chunk(b"IHDR", header) + chunk(b"IDAT", zlib.compress(rows)) + chunk(b"IEND", b"")
+
+
+def install_theme_icon(data_home):
+    """foamy-theme-icon in the run's own hicolor theme, before qs starts (Qt
+    reads the theme's directories once). The fixture's menus name it, and
+    send the same PNG as in-memory icon-data."""
+    theme = data_home / "icons/hicolor"
+    (theme / "16x16/apps").mkdir(parents=True)
+    (theme / "index.theme").write_text(
+        "[Icon Theme]\nName=Hicolor\nDirectories=16x16/apps\n\n[16x16/apps]\nSize=16\nContext=Applications\nType=Fixed\n"
+    )
+    (theme / "16x16/apps/foamy-theme-icon.png").write_bytes(png((90, 160, 255, 255)))
 
 
 def build_hostbar(host, dest):
@@ -124,6 +149,7 @@ def run_host(host_name, shots, theme, plugin, shell_path=PLUGIN / "tests/qml/Run
         fakebin={name: "#!/bin/sh\nexit 0\n" for name in STUBS},
     )
     build_hostbar(run.host, run.root / "hostbar")
+    install_theme_icon(Path(run.env["XDG_DATA_HOME"]))
     status = run.base / "status"
     events = run.base / "events"
     status.write_text("Passive\n")

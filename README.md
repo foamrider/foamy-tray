@@ -53,6 +53,10 @@ pinned back row.
 | Tab / Shift-Tab | Open the next / previous app's menu |
 
 Hovering with the pointer moves the same cursor, so one row is lit at a time.
+Menu entry icons are the app's in-memory images or icon names from your icon
+themes. An entry that names its icon by a file path, or only in the app's own
+icon directory, shows no icon: opening a file the app chose could stall the
+shell.
 Keys reach the menu once Hyprland gives the card keyboard focus (the card
 holds a Hyprland focus grab while open, like the stock tray menu). Right to
 left languages mirror the menu.
@@ -96,7 +100,8 @@ apps on the harness's private D-Bus session provide tray items and
 menus (one has none), so the desktop's own tray is never seen or touched, and no host script
 runs. It checks the 4.5 tray-section hooks in all four bar positions, the
 menu's keyboard model, and app data the tray must bound: an oversized
-tooltip, a multi-line menu label, an app whose icon goes away while
+tooltip, a multi-line menu label, menu icons that name FIFOs (by path
+and through the app's icon directory), an app whose icon goes away while
 its menu is open, and right-click on an app without a menu. `--shots DIR` saves screenshots.
 
 Test dependencies: `node`, `python`, `python-dbus`, `python-gobject`,

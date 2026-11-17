@@ -57,6 +57,17 @@ ShellRoot {
     })
     return false
   }
+  // The image:// sources of a menu's visible entry icons, in row order.
+  function menuIconSources(menuItem) {
+    var sources = [];
+    (function walk(item) {
+        if (item.sourceSize !== undefined && item.fillMode !== undefined && item.visible && String(item.source).indexOf("image://") === 0)
+          sources.push(String(item.source))
+        for (var i = 0; i < item.children.length; i++)
+          walk(item.children[i])
+      })(menuItem)
+    return sources
+  }
   function check(ok, message) {
     if (!ok) {
       finished = true
@@ -415,6 +426,15 @@ ShellRoot {
       test.check(labels.length === 1 && labels[0].lineCount === 1 && labels[0].height <= FoamyStyle.controlHeight && labels[0].text === "Offline mode second line third line", "a multi-line app label stays on its row: " + labels.map(function (l) {
         return l.lineCount + " lines, " + l.height + " px"
       }))
+      // The app's menu icons name FIFOs by path and through its
+      // IconThemePath; opening either blocks the shell, so the menu opening
+      // at all is the main check. Only a name the icon theme has keeps its
+      // icon, without the app's path. tests/runtime.py installs
+      // foamy-theme-icon, but offscreen Qt has no icon search paths, so
+      // there the theme finds nothing and no entry keeps an icon.
+      var icons = test.menuIconSources(m)
+      var themed = Quickshell.hasThemeIcon("foamy-theme-icon") ? ["image://icon/foamy-theme-icon"] : []
+      test.check(JSON.stringify(icons) === JSON.stringify(themed), "menu icons keep names the icon theme has: [" + icons + "]")
       test.check(t.openPanelIndicatorItem === t.trayAnchor(test.first), "open-panel mark targets the clicked icon")
       var slot = test.slotFor("foamy.tray")
       test.check(slot.panelIndicatorItem === t.trayAnchor(test.first), "the bar reads openPanelIndicatorItem")
@@ -454,6 +474,8 @@ ShellRoot {
       }, "the next menu starts at its top, unlit"))
         break
       test.check(t.activeTrayItem === t.trayItems[test.second] && t.openPanelIndicatorItem === t.trayAnchor(test.second), "Tab opens the next app's menu")
+      var dataIcons = test.menuIconSources(m)
+      test.check(dataIcons.length === 1 && dataIcons[0].indexOf("image://qsimage/") === 0, "an in-memory menu icon (icon-data) is shown: " + dataIcons)
       test.check(Math.abs(Math.abs(test.slotFor("foamy.tray").panelIndicatorCenter - test.markCenter) - t.trayItemExtent) < 1, "the mark moves under the icon whose menu is open")
       test.shot("tab")
       break

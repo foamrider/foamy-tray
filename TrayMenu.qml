@@ -264,6 +264,9 @@ PanelKeyCatcher {
           readonly property bool rowEnabled: modelData.enabled !== false
           readonly property int stop: menu.stopFor(index)
           readonly property string label: TrayModel.menuLabel(modelData.text)
+          readonly property string iconSource: TrayModel.menuIcon(modelData.icon, function (name) {
+            return Quickshell.hasThemeIcon(name)
+          })
           readonly property bool checkable: !separator && modelData.buttonType !== undefined && modelData.buttonType !== QsMenuButtonType.None
           readonly property bool checked: modelData.checkState === Qt.Checked
 
@@ -313,7 +316,7 @@ PanelKeyCatcher {
 
             Image {
               id: entryIcon
-              visible: String(row.modelData.icon || "") !== ""
+              visible: row.iconSource !== ""
               anchors.verticalCenter: parent.verticalCenter
               anchors.left: parent.left
               anchors.leftMargin: Style.space(24)
@@ -324,7 +327,7 @@ PanelKeyCatcher {
               // which leaves PNG icons upscaled and blurry on HiDPI displays.
               sourceSize.width: width * Screen.devicePixelRatio
               sourceSize.height: height * Screen.devicePixelRatio
-              source: String(row.modelData.icon || "")
+              source: row.iconSource
             }
 
             Text {
