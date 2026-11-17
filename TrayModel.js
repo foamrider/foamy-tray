@@ -147,6 +147,30 @@ function tooltipText(item) {
   return String(item.tooltipTitle || item.title || item.id || "")
 }
 
+// A menu entry's icon as an Image source, or "" for no icon. The entry's
+// icon comes from the app (DBusMenu icon-name, icon-data) and the menu
+// loads it on the shell's UI thread as the menu opens. Quickshell hands it
+// over as "image://icon/<name>[?path=<dirs>]" or an in-memory
+// "image://qsimage/…" (icon-data). For a name, its icon provider opens an
+// absolute path as a file, and when the theme has no such icon it opens
+// <dir>/<name> from the app's IconThemePath. A FIFO there with no writer
+// blocks that open and so the whole shell. Keep in-memory images and plain
+// names that `hasThemeIcon(name)` finds in the icon theme (Quickshell's,
+// which only looks in the theme directories, the user's and the system's).
+// The app's ?path= fallback goes; a name the theme lacks would draw the
+// provider's "missing" tile, so it gets no icon either.
+var THEME_ICON_NAME = /^[A-Za-z0-9][A-Za-z0-9._+@-]{0,254}$/
+
+function menuIcon(source, hasThemeIcon) {
+  var url = String(source === undefined || source === null ? "" : source)
+  if (url.indexOf("image://qsimage/") === 0 || url.indexOf("image://qspixmap/") === 0)
+    return url
+  if (url.indexOf("image://icon/") !== 0)
+    return ""
+  var name = url.slice("image://icon/".length).split("?")[0]
+  return THEME_ICON_NAME.test(name) && hasThemeIcon(name) ? "image://icon/" + name : ""
+}
+
 // A menu entry's label on one line. Labels come from the app and may hold
 // line breaks; a row draws one line of text, so a break would spill the
 // rest over the neighbouring rows. Breaks become spaces and the row elides
@@ -234,6 +258,7 @@ if (typeof module !== "undefined") {
     monochrome: monochrome,
     warpConnectionIcon: warpConnectionIcon,
     tooltipText: tooltipText,
+    menuIcon: menuIcon,
     menuLabel: menuLabel,
     hiddenRows: hiddenRows,
     cursorStops: cursorStops,

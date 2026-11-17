@@ -203,4 +203,48 @@ test("menu labels stay on one line", () => {
   assert.equal(Model.menuLabel(3), "3")
 })
 
+test("menu icons keep in-memory images and names the icon theme has", () => {
+  const theme = new Set(["document-open", "org.remmina.Remmina-status", "list-add-symbolic", "foamy-fifo", "a".repeat(255), "a".repeat(256)])
+  const asked = []
+  const hasThemeIcon = (name) => {
+    asked.push(name)
+    return theme.has(name)
+  }
+  const cases = [
+    // [Quickshell's source, expected Image source]
+    ["image://qsimage/12/3", "image://qsimage/12/3"],
+    ["image://qspixmap/4", "image://qspixmap/4"],
+    ["image://icon/document-open", "image://icon/document-open"],
+    ["image://icon/org.remmina.Remmina-status", "image://icon/org.remmina.Remmina-status"],
+    ["image://icon/list-add-symbolic?fallback=list-add", "image://icon/list-add-symbolic"],
+    // The app's IconThemePath fallback opens <dir>/<name>: dropped.
+    ["image://icon/foamy-fifo?path=/tmp/icons", "image://icon/foamy-fifo"],
+    // Only in the app's directory: no icon rather than the "missing" tile.
+    ["image://icon/app-only-icon?path=/opt/app/icons", ""],
+    ["image://icon/app-only-icon", ""],
+    // Paths and anything that is not a plain theme name: no icon.
+    ["image://icon//tmp/fifo.png", ""],
+    ["image://icon//tmp/fifo.png?path=/tmp", ""],
+    ["image://icon/../../tmp/fifo", ""],
+    ["image://icon/a/b", ""],
+    ["image://icon/%2Ftmp%2Ffifo", ""],
+    ["image://icon/:/qt-resource", ""],
+    ["image://icon/.hidden", ""],
+    ["image://icon/", ""],
+    ["image://icon/?path=/tmp", ""],
+    ["image://icon/" + "a".repeat(256), ""],
+    ["image://icon/" + "a".repeat(255), "image://icon/" + "a".repeat(255)],
+    ["file:///tmp/fifo.png", ""],
+    ["/tmp/fifo.png", ""],
+    ["image://qsimagex/1", ""],
+    ["", ""],
+    [undefined, ""],
+    [null, ""]
+  ]
+  for (const [source, expected] of cases)
+    assert.equal(Model.menuIcon(source, hasThemeIcon), expected, JSON.stringify(source))
+  // The theme is only asked about plain names, never a path.
+  assert.ok(asked.every((name) => /^[A-Za-z0-9][A-Za-z0-9._+@-]*$/.test(name) && name.length <= 255), JSON.stringify(asked))
+})
+
 console.log("RESULT: " + passed + " tray model tests passed")
